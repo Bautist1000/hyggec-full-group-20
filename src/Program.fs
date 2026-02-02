@@ -32,7 +32,13 @@ let internal parse (opt: CmdLine.ParserOptions): int =
     | Error(msg) ->
         Log.error (lazy $"%s{msg}"); 1 // Non-zero exit code
     | Ok(ast) ->
-        printf $"%s{PrettyPrinter.prettyPrint ast}"
+        if opt.ANF then
+            Log.debug (lazy $"Parsed AST:%s{Util.nl}%s{PrettyPrinter.prettyPrint ast}")
+            Log.debug (lazy $"Transforming AST into ANF")
+            let anf = ANF.transform ast
+            printf $"%s{PrettyPrinter.prettyPrint anf}"
+        else
+            printf $"%s{PrettyPrinter.prettyPrint ast}"
         0 // Success!
 
 
@@ -81,7 +87,13 @@ let rec internal interpret (opt: CmdLine.InterpreterOptions): int =
     | Ok(ast) ->
         if (not opt.Typecheck) then
             Log.info (lazy "Skipping type checking.")
-            doInterpret ast (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
+            if opt.ANF then
+                Log.debug (lazy $"Parsed AST:%s{Util.nl}%s{PrettyPrinter.prettyPrint ast}")
+                Log.debug (lazy $"Transforming AST into ANF")
+                let anf = ANF.transform ast
+                doInterpret anf (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
+            else
+                doInterpret ast (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
         else
             Log.info (lazy "Running type checker (as requested).")
             match (Typechecker.typecheck ast) with
@@ -91,12 +103,19 @@ let rec internal interpret (opt: CmdLine.InterpreterOptions): int =
                 1 // Non-zero exit code
             | Ok(tast) ->
                 Log.info (lazy "Type checking succeeded.")
-                doInterpret tast (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
+                if opt.ANF then
+                    Log.debug (lazy $"Parsed and typed AST:%s{Util.nl}%s{PrettyPrinter.prettyPrint tast}")
+                    Log.debug (lazy $"Transforming AST into ANF")
+                    let anf = ANF.transform tast
+                    doInterpret anf (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
+                else
+                    doInterpret tast (opt.LogLevel = Log.LogLevel.debug || opt.Verbose)
 
 
 /// Auxiliary function that attempts to compile the assembly code in the fiven
 /// filename, and returns Ok (with the compiled assembly code) or Error.
-let internal generateAsm (filename: string): Result<RISCV.Asm, unit> =
+let internal generateAsm (filename: string)
+                         (anf: bool) (maxRegisters: uint): Result<RISCV.Asm, unit> =
     match (Util.parseFile filename) with
     | Error(msg) ->
         Log.error (lazy $"%s{msg}")
@@ -109,7 +128,20 @@ let internal generateAsm (filename: string): Result<RISCV.Asm, unit> =
             Error()
         | Ok(tast) ->
             Log.info (lazy "Type checking succeeded.")
-            let asm = RISCVCodegen.codegen tast
+            let asm =
+                if (anf) then
+                    Log.debug (lazy $"Transforming AST into ANF")
+                    let anf = ANF.transform tast
+                    let registers =
+                        if (maxRegisters >= 3u) && (maxRegisters <= 18u) then
+                            maxRegisters
+                        else if maxRegisters = 0u then
+                            18u // Default
+                        else
+                            failwith $"The number of registers must be between 3 and 18 (got %d{maxRegisters} instead)"
+                    ANFRISCVCodegen.codegen anf registers
+                else
+                    RISCVCodegen.codegen tast
             Ok(asm)
 
 
@@ -120,7 +152,7 @@ let internal compile (opt: CmdLine.CompilerOptions): int =
     if opt.Verbose then Log.setLogLevel Log.LogLevel.debug
     Log.debug (lazy $"Parsed command line options:%s{Util.nl}%O{opt}")
 
-    match (generateAsm opt.File) with
+    match (generateAsm opt.File opt.ANF opt.Registers) with
     | Ok(asm) ->
         match opt.OutFile with
         | Some(f) ->
@@ -144,7 +176,7 @@ let internal launchRARS (opt: CmdLine.RARSLaunchOptions): int =
     if opt.Verbose then Log.setLogLevel Log.LogLevel.debug
     Log.debug (lazy $"Parsed command line options:%s{Util.nl}%O{opt}")
 
-    match (generateAsm opt.File) with
+    match (generateAsm opt.File opt.ANF opt.Registers) with
     | Ok(asm) ->
         let exitCode = RARS.launch (asm.ToString()) true
         exitCode

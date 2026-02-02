@@ -92,12 +92,97 @@ let pValue = choice [
 ]
 
 
+/// Parse a possibly empty sequence of comma-separated (pre)types.
+let pPretypesCommaSeq =
+    /// Parse a (pre)type and wrap the result in a single-element list (this is
+    /// handy for accumulation using chainl below).
+    let pPretypeLst = pPretype |>> fun ptNode -> [ptNode]
+
+    chainl pPretypeLst
+        (pToken COMMA
+             |>> fun _ ->
+                fun acc ptNode ->
+                    // ptNode is produced by pIdentType above and contains a
+                    // pretype AST node; we accumulate it with acc
+                    List.append acc ptNode)
+        [] // Default result for chainl: empty list
+
+
+/// Parse a possibly empty sequence of comma-separated (pre)types, between
+/// parentheses.
+let pParenPretypesCommaSeq = choice [
+    pToken LIT_UNIT >>- preturn []
+    pToken LPAREN >>- pPretypesCommaSeq ->> pToken RPAREN
+]
+
+
 /// Parse a pretype, producing a PretypeNode.
 let pPretype' = choice [
     pIdent
         |>> fun (tok, name) ->
             mkPretypeNode (AST.Pretype.TId name) tok.Begin tok.Begin tok.End
+    // Function type
+    pParenPretypesCommaSeq ->>- pToken RARROW ->>- pPretype
+        |>> fun ((targs, tok), tret) ->
+            mkPretypeNode (AST.Pretype.TFun (targs, tret)) tok.Begin tok.Begin tret.Pos.End
 ]
+
+
+/// Parse a possibly empty sequence of comma-separated identifiers with type
+/// ascriptions.
+let pIdentTypesCommaSeq =
+    /// Parse an identifier with a (pre)type ascription. Wrap the result in a
+    /// single-element list (this is handy for accumulation using chainl below).
+    let pIdentType = pIdent ->>- (pToken COLON >>- pPretype)
+                        |>> fun ((_, name), preType) -> [(name, preType)]
+
+    chainl pIdentType
+        (pToken COMMA
+            |>> fun _ ->
+                fun acc idType ->
+                    // idType is produced by pIdentType above and contains a
+                    // pair with an identifier name and (pre)type; we
+                    // accumulate it with acc
+                    List.append acc idType)
+        [] // Default result for chainl: empty list
+
+
+/// Parse a possibly empty sequence of comma-separated identifiers with type
+/// ascriptions, between parentheses.
+let pParenIdentTypesCommaSeq =
+    choice [
+        pToken LIT_UNIT >>- preturn [] // Matches (), i.e. two parentheses without spaces in between
+        pToken LPAREN >>- pIdentTypesCommaSeq ->> pToken RPAREN
+    ]
+
+
+/// Parse a possibly empty sequence of comma-separated simple expressions.
+let pSimpleExprCommaSeq =
+    /// Parse a simple expression and wrap the result in a single-element list
+    /// (this is handy for accumulation using chainl below).
+    let pSimpleExprList = pSimpleExpr |>> fun node -> [node]
+
+    chainl pSimpleExprList
+           (pToken COMMA
+                |>> fun _ ->
+                    fun acc expr ->
+                        // expr is produced by pSimpleExprList above and
+                        // contains an AST node wrapped in a list; we
+                        // accumulate it with acc
+                        List.append acc expr)
+           [] // Default result for chainl: empty list
+
+
+/// Parse a possibly empty sequence of comma-separated simple expressions,
+/// between parentheses. Return a pair with the list of parsed AST nodes and the
+/// rightmost token,
+let pParenSimpleExprCommaSeq =
+    choice [
+        pToken LIT_UNIT // Matches (), i.e. two parentheses without spaces in between
+            |>> fun tok -> ([], tok)
+        pToken LPAREN >>- pSimpleExprCommaSeq ->>- pToken RPAREN
+    ]
+
 
 /// Parse empty parentheses, like (), ( ), (  )... They could be tokenized as
 /// either a LIT_UNIT or as an LPAREN followed by an RPAREN. Return the
@@ -170,7 +255,18 @@ let pPrimary = choice [
                     pToken LPAREN >>- pSimpleExpr ->> pToken RPAREN
                     pValue
                     pVariable
-               ]
+               ] >>= fun node ->
+                        // Check if the expression is followed by a left
+                        // parenthesis: if so, it is a function application
+                        // (a.k.a. function call). Otherwise, return the
+                        // AST node as it is.
+                        choice [
+                            pParenSimpleExprCommaSeq
+                                |>> fun (args, tok) ->
+                                    mkNode (AST.Expr.Application (node, args))
+                                           node.Pos.Begin node.Pos.Begin tok.End
+                            preturn node
+                        ]
 
 
 /// Parse an ascription: a primary expression with (optional) type annotation.
@@ -286,6 +382,11 @@ let pSimpleExpr' = choice [
     pToken WHILE ->>- pSimpleExpr ->>- (pToken DO >>- pSimpleExpr)
         |>> fun ((tok, cond), body) ->
             mkNode (AST.Expr.While (cond, body)) tok.Begin tok.Begin body.Pos.End
+    // Lambda expression: fun (args) -> body
+    pToken FUN ->>-
+        pParenIdentTypesCommaSeq ->>- (pToken RARROW >>- pSimpleExpr)
+            |>> fun ((tok, args), body) ->
+                mkNode (AST.Expr.Lambda (args, body)) tok.Begin tok.Begin body.Pos.End
 ]
 
 
@@ -365,6 +466,22 @@ let pLetMut =
 /// Parse any Hygge expression.
 let pExpr' = choice [
     pType
+    // Function declaration. We rewrite it into a let-expression that declares a
+    // variable and initializes it with a lambda term.
+    pToken FUN ->>- pIdent ->>-
+        pParenIdentTypesCommaSeq ->>-
+        (pToken COLON >>- pPretype) ->>-
+        (pToken EQ >>- pSimpleExpr) ->>-
+        (pToken SEMI >>- pExpr)
+            |>> fun (((((tok, (_, name)), args), retType), body), scope) ->
+                let argTypes = List.map snd args
+                let funPretype = AST.Pretype.TFun (argTypes, retType)
+                let funPretypeNode = mkPretypeNode funPretype
+                                                   tok.Begin tok.Begin retType.Pos.End
+                let lambda = mkNode (AST.Expr.Lambda (args, body))
+                                    tok.Begin tok.Begin body.Pos.End
+                mkNode (AST.Expr.LetT (name, funPretypeNode, lambda, scope))
+                       tok.Begin tok.Begin scope.Pos.End
     pLetMut
     pLetT
     pLet

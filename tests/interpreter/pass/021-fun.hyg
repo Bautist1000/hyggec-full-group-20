@@ -1,0 +1,7 @@
+let y = 42;
+let x: int = 1;
+fun f(x: int): int = x + 1;
+assert(x = 1);
+fun g(y: int): int = y + 2;
+assert(y = 42);
+assert(f(g(33)) = 36)

@@ -36,8 +36,12 @@ type Token =
     | LT
     /// Left arrow (assignment operator).
     | LARROW
+    /// Right arrow (function type operator).
+    | RARROW
     /// Semicolon.
     | SEMI
+    /// Comma.
+    | COMMA
     /// Colon, used e.g. in type ascriptions.
     | COLON
     /// Keyword 'if'.
@@ -66,6 +70,8 @@ type Token =
     | WHILE
     /// Keyword 'do'.
     | DO
+    /// Keyword 'fun'.
+    | FUN
     /// Integer literal.
     | LIT_INT of value: int
     /// Floating-point literal.
@@ -132,6 +138,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     // matched first and LIT_UNIT will never be produced.
     | Symbol "()" LIT_UNIT pos (accepted, pos')
     | Symbol "<-" LARROW   pos (accepted, pos')
+    | Symbol "->" RARROW   pos (accepted, pos')
     | Symbol "("  LPAREN   pos (accepted, pos')
     | Symbol ")"  RPAREN   pos (accepted, pos')
     | Symbol "{"  LCURLY   pos (accepted, pos')
@@ -140,6 +147,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "*"  TIMES    pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')
     | Symbol "<"  LT       pos (accepted, pos')
+    | Symbol ","  COMMA    pos (accepted, pos')
     | Symbol ";"  SEMI     pos (accepted, pos')
     | Symbol ":"  COLON    pos (accepted, pos')
     | Regex @"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?f" mkFloatLit       pos (accepted, pos')
@@ -175,6 +183,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "mutable" -> MUTABLE
     | "while" -> WHILE
     | "do" -> DO
+    | "fun" -> FUN
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
     | other -> IDENT other

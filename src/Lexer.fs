@@ -74,6 +74,12 @@ type Token =
     | FUN
     /// Keyword 'struct'.
     | STRUCT
+    /// Keyword 'union'.
+    | UNION
+    /// Keyword 'match'.
+    | MATCH
+    /// Keyword 'with'.
+    | WITH
     /// Dot, used for field selection.
     | DOT
     /// Integer literal.
@@ -191,6 +197,9 @@ and internal mkKeywordOrIdent (s: string) =
     | "do" -> DO
     | "fun" -> FUN
     | "struct" -> STRUCT
+    | "union" -> UNION
+    | "match" -> MATCH
+    | "with" -> WITH
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
     | other -> IDENT other

@@ -146,6 +146,10 @@ let pPretype' = choice [
     pToken STRUCT ->>- (pToken LCURLY >>- pIdentPretypesSemiSeq) ->>- pToken RCURLY
         |>> fun ((tok1, fields), tok2) ->
             mkPretypeNode (AST.Pretype.TStruct fields) tok1.Begin tok1.Begin tok2.End
+    // Union type
+    pToken UNION ->>- (pToken LCURLY >>- pIdentPretypesSemiSeq) ->>- pToken RCURLY
+        |>> fun ((tok1, cases), tok2) ->
+            mkPretypeNode (AST.Pretype.TUnion cases) tok1.Begin tok1.Begin tok2.End
 ]
 
 
@@ -264,6 +268,13 @@ let pType =
                        tok.Begin tok.Begin scope.Pos.End
 
 
+/// Parse a union value constructor.
+let pUnionCons =
+    pIdent ->>- (pToken LCURLY >>- pSimpleExpr) ->>- pToken RCURLY
+        |>> fun (((tok1, label), expr), tok2) ->
+            mkNode (AST.Expr.UnionCons (label, expr)) tok1.Begin tok1.Begin tok2.End
+
+
 /// Parse a variable, producing an AST node with a Var expression.
 let pVariable =
     pIdent
@@ -315,6 +326,7 @@ let pFieldDotSeq =
 let pPrimary = choice [
                     pToken LPAREN >>- pSimpleExpr ->> pToken RPAREN
                     pValue
+                    pUnionCons // IMPORTANT: try parsing this before 'pVariable'
                     pVariable
                     pStructCons
                ] >>= fun node ->
@@ -450,6 +462,24 @@ let pIfExpr = choice [
 ]
 
 
+/// Parse a non-empty sequence of pattern matching cases separated by semicolons.
+let pMatchCases =
+    /// Parse a single pattern matching case and wrap the result in a
+    /// single-element list (handy for accumulation using chainl1 below).
+    let pMatchCase = pIdent ->>- (pToken LCURLY >>- pIdent) ->>- pToken RCURLY ->>-
+                        (pToken RARROW >>- pSimpleExpr)
+                            |>> fun ((((_, label), (_, variable)), _), expr) ->
+                                [(label, variable, expr)]
+
+    chainl1 pMatchCase
+        (pToken SEMI
+            |>> fun _ ->
+                fun acc matchCase ->
+                    // matchCase (produced by pMatchCase above) contains a triple
+                    // with label, variable, and expression; accumulate it with acc
+                    List.append acc matchCase)
+
+
 /// Parse a "simple" expression, which (unlike the more general 'pExpr') cannot
 /// result in a 'Seq'uence of sub-expressions, unless they are explicitly
 /// enclosed in curly brackets.
@@ -468,6 +498,11 @@ let pSimpleExpr' = choice [
         pParenIdentTypesCommaSeq ->>- (pToken RARROW >>- pSimpleExpr)
             |>> fun ((tok, args), body) ->
                 mkNode (AST.Expr.Lambda (args, body)) tok.Begin tok.Begin body.Pos.End
+    // Match expression: match expr with { cases }
+    pToken MATCH ->>- pSimpleExpr ->>-
+        (pToken WITH >>- pToken LCURLY >>- pMatchCases) ->>- pToken RCURLY
+            |>> fun (((tok, expr), cases), tok2) ->
+                mkNode (AST.Expr.Match (expr, cases)) tok.Begin tok.Begin tok2.End
 ]
 
 

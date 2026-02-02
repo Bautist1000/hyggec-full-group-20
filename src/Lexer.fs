@@ -72,6 +72,10 @@ type Token =
     | DO
     /// Keyword 'fun'.
     | FUN
+    /// Keyword 'struct'.
+    | STRUCT
+    /// Dot, used for field selection.
+    | DOT
     /// Integer literal.
     | LIT_INT of value: int
     /// Floating-point literal.
@@ -153,7 +157,9 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Regex @"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?f" mkFloatLit       pos (accepted, pos')
     | Regex @"\d+"                               mkIntegerLit     pos (accepted, pos')
     | Regex "\"(\\\\\"|[^\"])*\""                mkStringLit      pos (accepted, pos')
-    | Regex @"[a-zA-Z_][a-zA-Z0-9_]*"            mkKeywordOrIdent pos (accepted, pos') ->
+    | Regex @"[a-zA-Z_][a-zA-Z0-9_]*"            mkKeywordOrIdent pos (accepted, pos')
+    // We tokenize the dot here to give precedence to floating-point numbers
+    | Symbol "."  DOT      pos (accepted, pos') ->
         // Add the accepted token to acc (in reverse order for performance) and
         // keep tokenizing the rest of the input at position pos'
         acc.Add accepted
@@ -184,6 +190,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "while" -> WHILE
     | "do" -> DO
     | "fun" -> FUN
+    | "struct" -> STRUCT
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
     | other -> IDENT other

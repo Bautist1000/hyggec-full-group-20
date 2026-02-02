@@ -116,6 +116,23 @@ let pParenPretypesCommaSeq = choice [
 ]
 
 
+/// Parse a non-empty sequence of identifiers with type ascriptions, separated
+/// by semicolons.
+let pIdentPretypesSemiSeq =
+    /// Parse an identifier with a (pre)type ascription. Wrap the result in a
+    /// single-element list (this is handy for accumulation using chainl below).
+    let pIdentType = pIdent ->>- (pToken COLON >>- pPretype)
+                        |>> fun ((_, name), preType) -> [(name, preType)]
+
+    chainl1 pIdentType
+        (pToken SEMI
+            |>> fun _ ->
+                fun acc idType ->
+                     // idType (produced by pIdentType above) contains a pair with
+                     // an identifier name and (pre)type; we accumulate it with acc
+                     List.append acc idType)
+
+
 /// Parse a pretype, producing a PretypeNode.
 let pPretype' = choice [
     pIdent
@@ -125,6 +142,10 @@ let pPretype' = choice [
     pParenPretypesCommaSeq ->>- pToken RARROW ->>- pPretype
         |>> fun ((targs, tok), tret) ->
             mkPretypeNode (AST.Pretype.TFun (targs, tret)) tok.Begin tok.Begin tret.Pos.End
+    // Struct type
+    pToken STRUCT ->>- (pToken LCURLY >>- pIdentPretypesSemiSeq) ->>- pToken RCURLY
+        |>> fun ((tok1, fields), tok2) ->
+            mkPretypeNode (AST.Pretype.TStruct fields) tok1.Begin tok1.Begin tok2.End
 ]
 
 
@@ -250,12 +271,72 @@ let pVariable =
             mkNode (AST.Expr.Var name) tok.Begin tok.Begin tok.End
 
 
+/// Parse a non-empty sequence of identifiers (representing struct fields) with
+/// initialized with simple expressions, separated by semicolons.
+let pFieldInitSeq =
+    /// Parse an identifier followed by an equal and a simple expression. Wrap
+    /// the result in a single-element list (handy for accumulation using
+    /// chainl1 below).
+    let pFieldInit = pIdent ->>- (pToken EQ >>- pSimpleExpr)
+                        |>> fun ((_, name), expr) -> [(name, expr)]
+
+    chainl1 pFieldInit
+        (pToken SEMI
+            |>> fun _ ->
+                fun acc fInit ->
+                    // fInit (produced by pFieldInit above) contains a pair with
+                    // an field name and simple expression; accumulate it with acc
+                    List.append acc fInit)
+
+
+/// Parse a struct value construction.
+let pStructCons =
+    pToken STRUCT ->>- (pToken LCURLY >>- pFieldInitSeq) ->>- pToken RCURLY
+        |>> fun ((tok1, fields), tok2) ->
+            mkNode (AST.Expr.StructCons fields) tok1.Begin tok1.Begin tok2.End
+
+
+/// Parse a sequence of one or more dot-separated identifiers (representing
+/// field names in a sequence of fields selections, e.g. 'field1.field2.field3').
+let pFieldDotSeq =
+    /// Parse a field name (as an identifier) and wrap it in a list (handy for
+    /// accumulation using chainl1 below).
+    let pField = pIdent
+                    |>> fun x -> [x]
+
+    chainl1 pField
+        (pToken DOT
+            |>> fun _ ->
+                fun acc field ->
+                    acc @ field)
+
+
 /// Parse a primary expression.
 let pPrimary = choice [
                     pToken LPAREN >>- pSimpleExpr ->> pToken RPAREN
                     pValue
                     pVariable
+                    pStructCons
                ] >>= fun node ->
+                    // If the expression is followed by a dot, then it is a
+                    // field selection. If so, parse and accumulate as many
+                    // nested field selections as possible (e.g.
+                    // 'expr.field1.field2.field3') and create corresponding
+                    // nested AST FieldSelect nodes. Otherwise, return the
+                    // AST node as it is.
+                    choice [
+                        pToken DOT >>-
+                             pFieldDotSeq
+                                |>> fun fields ->
+                                    // Fold over all parsed fields to create
+                                    // nested AST FieldSelect nodes.
+                                    List.fold
+                                        (fun acc (tok, field) ->
+                                            mkNode (AST.Expr.FieldSelect (acc, field))
+                                                   tok.Begin acc.Pos.Begin tok.End)
+                                        node fields
+                        preturn node
+                    ] >>= fun node ->
                         // Check if the expression is followed by a left
                         // parenthesis: if so, it is a function application
                         // (a.k.a. function call). Otherwise, return the

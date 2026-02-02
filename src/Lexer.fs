@@ -34,6 +34,8 @@ type Token =
     | EQ
     /// Less-than symbol.
     | LT
+    /// Left arrow (assignment operator).
+    | LARROW
     /// Semicolon.
     | SEMI
     /// Colon, used e.g. in type ascriptions.
@@ -58,6 +60,8 @@ type Token =
     | ASSERT
     /// Keyword 'type'.
     | TYPE
+    /// Keyword 'mutable'.
+    | MUTABLE
     /// Integer literal.
     | LIT_INT of value: int
     /// Floating-point literal.
@@ -123,6 +127,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     // LIT_UNIT is moved after LPAREN and RPAREN, then LPAREN and RPAREN will be
     // matched first and LIT_UNIT will never be produced.
     | Symbol "()" LIT_UNIT pos (accepted, pos')
+    | Symbol "<-" LARROW   pos (accepted, pos')
     | Symbol "("  LPAREN   pos (accepted, pos')
     | Symbol ")"  RPAREN   pos (accepted, pos')
     | Symbol "{"  LCURLY   pos (accepted, pos')
@@ -163,6 +168,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "print" -> PRINT
     | "assert" -> ASSERT
     | "type" -> TYPE
+    | "mutable" -> MUTABLE
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
     | other -> IDENT other

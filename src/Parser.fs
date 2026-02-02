@@ -277,6 +277,9 @@ let pIfExpr = choice [
 /// result in a 'Seq'uence of sub-expressions, unless they are explicitly
 /// enclosed in curly brackets.
 let pSimpleExpr' = choice [
+    pPrimary ->>- pToken LARROW ->>- pSimpleExpr
+        |>> fun ((lhs, tok), rhs) ->
+            mkNode (AST.Expr.Assign (lhs, rhs)) tok.Begin lhs.Pos.Begin rhs.Pos.End
     pIfExpr
     pOrExpr
     pCurlyExpr
@@ -346,9 +349,20 @@ let pLetT =
                        tok.Begin tok.Begin scope.Pos.End
 
 
+/// Parse a mutable 'let' binding.
+let pLetMut =
+    pToken LET ->>- pToken MUTABLE ->>- pIdent ->>-
+        (pToken EQ >>- pSimpleExpr) ->>-
+        (pToken SEMI >>- pExpr)
+            |>> fun ((((tok, _), (_, name)), init), scope) ->
+                mkNode (AST.Expr.LetMut (name, init, scope))
+                       tok.Begin tok.Begin scope.Pos.End
+
+
 /// Parse any Hygge expression.
 let pExpr' = choice [
     pType
+    pLetMut
     pLetT
     pLet
     pSequenceExpr

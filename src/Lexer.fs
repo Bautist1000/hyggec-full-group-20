@@ -62,6 +62,10 @@ type Token =
     | TYPE
     /// Keyword 'mutable'.
     | MUTABLE
+    /// Keyword 'while'.
+    | WHILE
+    /// Keyword 'do'.
+    | DO
     /// Integer literal.
     | LIT_INT of value: int
     /// Floating-point literal.
@@ -169,6 +173,8 @@ and internal mkKeywordOrIdent (s: string) =
     | "assert" -> ASSERT
     | "type" -> TYPE
     | "mutable" -> MUTABLE
+    | "while" -> WHILE
+    | "do" -> DO
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
     | other -> IDENT other

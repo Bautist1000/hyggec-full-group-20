@@ -283,6 +283,9 @@ let pSimpleExpr' = choice [
     pIfExpr
     pOrExpr
     pCurlyExpr
+    pToken WHILE ->>- pSimpleExpr ->>- (pToken DO >>- pSimpleExpr)
+        |>> fun ((tok, cond), body) ->
+            mkNode (AST.Expr.While (cond, body)) tok.Begin tok.Begin body.Pos.End
 ]
 
 

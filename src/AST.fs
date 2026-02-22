@@ -47,6 +47,8 @@ type NumericalOp =
     | Add
     /// Multiplication operation.
     | Mult
+    /// Division operation
+    | Div
 
 
 /// Operation type used to distinguish binary logical expressions.

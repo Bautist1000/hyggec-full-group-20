@@ -1,0 +1,2 @@
+assert(10 / 5 = 2);
+assert(9f / 3f = 3f)

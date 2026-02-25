@@ -22,6 +22,8 @@ type Token =
     | RCURLY
     /// Plus sign.
     | PLUS
+    /// Minus sign
+    | MINUS
     /// Multiplication sign.
     | TIMES
     /// Division sign
@@ -130,6 +132,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "{"  LCURLY   pos (accepted, pos')
     | Symbol "}"  RCURLY   pos (accepted, pos')
     | Symbol "+"  PLUS     pos (accepted, pos')
+    | Symbol "-"  MINUS    pos (accepted, pos')
     | Symbol "*"  TIMES    pos (accepted, pos')
     | Symbol "/"  DIVIDED  pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')

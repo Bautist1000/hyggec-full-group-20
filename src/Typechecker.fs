@@ -152,6 +152,11 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tpe, tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | NumericalOp.Sub ->
+            match (binaryNumOpTyper "subtraction" node.Pos env lhs rhs) with
+            | Ok(tpe, tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
         | NumericalOp.Mult ->
             match (binaryNumOpTyper "multiplication" node.Pos env lhs rhs) with
             | Ok(tpe, tlhs, trhs) ->

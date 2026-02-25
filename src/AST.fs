@@ -45,6 +45,8 @@ and Pretype =
 type NumericalOp =
     /// Addition operation.
     | Add
+    /// Subtraction operation
+    | Sub
     /// Multiplication operation.
     | Mult
     /// Division operation

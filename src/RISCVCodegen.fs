@@ -127,6 +127,9 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 | NumericalOp.Add ->
                     Asm(RV.ADD(Reg.r(env.Target),
                                Reg.r(env.Target), Reg.r(rtarget)))
+                | NumericalOp.Sub ->
+                    Asm(RV.SUB(Reg.r(env.Target),
+                               Reg.r(env.Target), Reg.r(rtarget)))  
                 | NumericalOp.Mult ->
                     Asm(RV.MUL(Reg.r(env.Target),
                                Reg.r(env.Target), Reg.r(rtarget)))
@@ -145,6 +148,9 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 match op with
                 | NumericalOp.Add ->
                     Asm(RV.FADD_S(FPReg.r(env.FPTarget),
+                                  FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | NumericalOp.Sub ->
+                    Asm(RV.FSUB_S(FPReg.r(env.FPTarget),
                                   FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
                 | NumericalOp.Mult ->
                     Asm(RV.FMUL_S(FPReg.r(env.FPTarget),

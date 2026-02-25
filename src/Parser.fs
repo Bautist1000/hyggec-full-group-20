@@ -228,6 +228,12 @@ let pAddExpr =
                     fun acc rhs ->
                         mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Add, acc, rhs))
                                tok.Begin acc.Pos.Begin rhs.Pos.End
+                               
+            pToken MINUS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Sub, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End
         ])
 
 

@@ -36,6 +36,8 @@ type Token =
     | OR
     /// Logical 'not'.
     | NOT
+    /// Square root function
+    | SQRT
     /// Equality symbol.
     | EQ
     /// Less-than symbol.
@@ -162,6 +164,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "and" -> AND
     | "or" -> OR
     | "not" -> NOT
+    | "sqrt" -> SQRT
     | "if" -> IF
     | "then" -> THEN
     | "else" -> ELSE

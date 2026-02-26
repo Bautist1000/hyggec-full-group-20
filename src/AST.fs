@@ -122,6 +122,9 @@ and Expr<'E,'T> =
     /// Logical not.
     | Not of arg: Node<'E,'T>
 
+    /// Square root operation (Only floating point numbers)
+    | Sqrt of arg: Node<'E,'T>
+
     /// Binary relational operation between lhs and rhs.
     | BinRelOp of op: RelationalOp
                 * lhs: Node<'E,'T>

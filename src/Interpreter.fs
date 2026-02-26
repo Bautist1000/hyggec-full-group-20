@@ -118,6 +118,16 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                     Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
                 | None -> None
 
+    | Sqrt(arg) ->
+        if isValue arg then
+            match arg.Expr with
+            | FloatVal(f) -> Some(env, {node with Expr = FloatVal(sqrt f)})
+            | _ -> failwith "sqrt expects a float"
+        else
+            match reduce env arg with
+            | Some(env', arg') -> Some(env', {node with Expr = Sqrt(arg')})
+            | None -> None
+
     | BinLogicOp(op, lhs, rhs) ->
         match op with
         | LogicOp.And ->

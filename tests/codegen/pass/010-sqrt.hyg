@@ -1,0 +1,4 @@
+{
+    let x = sqrt(4f);
+    if x < 3f then 0 else 1
+}

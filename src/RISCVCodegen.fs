@@ -168,6 +168,14 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
         | t ->
             failwith $"BUG: numerical operation codegen invoked on invalid type %O{t}"
 
+    | Sqrt(arg) ->
+        // First, generate code for the argument in the floating-point target
+        let argAsm = doCodegen env arg
+        // Compute square root using RISC-V floating-point sqrt instruction
+        let sqrtAsm = Asm(RV.FSQRT_S(FPReg.r(env.FPTarget), FPReg.r(env.FPTarget)))
+        // Combine argument code and sqrt instruction
+        argAsm ++ sqrtAsm        
+
     | BinLogicOp(op, lhs, rhs) ->
         // Code generation for binary logical operations is very similar: we
         // compile the lhs and rhs giving them different target registers, and

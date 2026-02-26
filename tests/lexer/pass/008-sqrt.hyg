@@ -1,0 +1,6 @@
+// Lexer test for sqrt keyword and float literal
+sqrt(4f)
+sqrt(9f)
+sqrt(16f)
+sqrt(1f + 8f)
+sqrt(sqrt(16f))

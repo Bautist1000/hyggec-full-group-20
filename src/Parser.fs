@@ -135,6 +135,20 @@ let pPrintLn =
         |>> fun ((tok1, expr), tok2) ->
             mkNode (AST.Expr.PrintLn expr) tok1.Begin tok1.Begin tok2.End
 
+/// Parse a sqrt(...) expression, with optional type ascription.
+let pSqrt =
+    pToken SQRT ->>- (pToken LPAREN >>- pSimpleExpr) ->>- pToken RPAREN
+    >>= fun ((tokSqrt, expr), tokR) ->
+        // Create the basic Sqrt node
+        let node = mkNode (AST.Expr.Sqrt expr) tokSqrt.Begin tokSqrt.Begin tokR.End
+        // Optionally parse ": type" immediately after
+        choice [
+            pToken COLON ->>- pPretype
+                |>> fun (tokColon, tpe) ->
+                    mkNode (AST.Expr.Ascription(tpe, node))
+                           tokColon.Begin node.Pos.Begin tpe.Pos.End
+            preturn node
+        ]
 
 /// Parse an assert(...) expression.
 let pAssert =
@@ -196,6 +210,7 @@ let pUnaryExpr' = choice [
     pReadInt
     pReadFloat
     pPrint
+    pSqrt
     pPrintLn
     pAssert
     pAscriptionExpr
@@ -240,7 +255,6 @@ let pAddExpr =
                         mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Sub, acc, rhs))
                                tok.Begin acc.Pos.Begin rhs.Pos.End
         ])
-
 
 /// Parse a relational expression.
 let pRelExpr =

@@ -175,6 +175,15 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
                 | _ -> Error([(node.Pos, "Remainder expected arguments of type int")])
             | Error(es) -> Error(es)
 
+    | Sqrt(arg) ->
+        match typer env arg with
+        | Ok(targ) ->
+            if isSubtypeOf env targ.Type TFloat then
+                Ok { Pos = node.Pos; Env = env; Type = TFloat; Expr = Sqrt(targ) }
+            else
+            Error [ (node.Pos, $"sqrt: expected argument of type %O{TFloat}, found %O{targ.Type}") ]
+        | Error(es) -> Error(es)
+
     | BinLogicOp(op, lhs, rhs) ->
         match op with
         | LogicOp.And ->

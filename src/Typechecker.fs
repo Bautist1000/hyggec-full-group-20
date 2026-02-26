@@ -263,8 +263,13 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinRelOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | RelationalOp.LessEq
         | RelationalOp.Less ->
-            match (binaryNumRelOpTyper "less than" node.Pos env lhs rhs) with
+            let msg = 
+                match op with
+                | RelationalOp.Less -> "less than"
+                | _ -> "less than or equal to"
+            match binaryNumRelOpTyper msg node.Pos env lhs rhs with
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinRelOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)

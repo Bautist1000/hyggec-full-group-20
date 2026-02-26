@@ -211,6 +211,7 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
             let labelName = match op with
                             | RelationalOp.Eq -> "eq"
                             | RelationalOp.Less -> "less"
+                            | RelationalOp.LessEq -> "lesseq"
             /// Label to jump to when the comparison is true
             let trueLabel = Util.genSymbol $"%O{labelName}_true"
             /// Label to mark the end of the comparison code
@@ -223,7 +224,18 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.BEQ(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
                 | RelationalOp.Less ->
                     Asm(RV.BLT(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
-
+                | RelationalOp.LessEq ->
+                    // RISC-V does not have a direct instruction for 'less or equal
+                    // than', but we can achieve it by checking whether 'rhs < lhs'
+                    // is false (i.e., whether 'lhs < rhs' is true, or 'lhs == rhs'
+                    // is true)
+                    Asm()
+                        .AddText([
+                            (RV.BLT(Reg.r(env.Target), Reg.r(rtarget), trueLabel),
+                             "Jump to 'true' label if lhs < rhs")
+                            (RV.BEQ(Reg.r(env.Target), Reg.r(rtarget), trueLabel),
+                             "Jump to 'true' label if lhs == rhs")
+                        ])
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
                 .AddText([
@@ -245,6 +257,8 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.FEQ_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
                 | RelationalOp.Less ->
                     Asm(RV.FLT_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | RelationalOp.LessEq ->
+                    Asm(RV.FLE_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
         | t ->

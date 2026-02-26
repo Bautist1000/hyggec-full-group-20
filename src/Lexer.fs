@@ -30,6 +30,8 @@ type Token =
     | OR
     /// Logical 'not'.
     | NOT
+    /// Less-than-or-equal symbol.
+    |LEQ
     /// Equality symbol.
     | EQ
     /// Less-than symbol.
@@ -156,6 +158,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "+"  PLUS     pos (accepted, pos')
     | Symbol "*"  TIMES    pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')
+    | Symbol "<="  LEQ       pos (accepted, pos')
     | Symbol "<"  LT       pos (accepted, pos')
     | Symbol ","  COMMA    pos (accepted, pos')
     | Symbol ";"  SEMI     pos (accepted, pos')

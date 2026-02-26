@@ -136,6 +136,9 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 | NumericalOp.Div ->
                     Asm(RV.DIV(Reg.r(env.Target),
                                Reg.r(env.Target), Reg.r(rtarget)))
+                | NumericalOp.Mod ->
+                    Asm(RV.REM(Reg.r(env.Target),
+                               Reg.r(env.Target), Reg.r(rtarget)))
             // Put everything together
             lAsm ++ rAsm ++ opAsm
         | t when (isSubtypeOf node.Env t TFloat) ->
@@ -158,6 +161,8 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 | NumericalOp.Div ->
                     Asm(RV.FDIV_S(FPReg.r(env.FPTarget),
                                   FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | NumericalOp.Mod ->
+                    failwith "Remainder operation not defined for TFloat. This should not happen."
             // Put everything together
             lAsm ++ rAsm ++ opAsm
         | t ->

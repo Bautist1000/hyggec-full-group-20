@@ -28,6 +28,8 @@ type Token =
     | TIMES
     /// Division sign
     | DIVIDED
+    /// Modulo sign
+    | MODULO
     /// Logical 'and'.
     | AND
     /// Logical 'or'.
@@ -135,6 +137,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "-"  MINUS    pos (accepted, pos')
     | Symbol "*"  TIMES    pos (accepted, pos')
     | Symbol "/"  DIVIDED  pos (accepted, pos')
+    | Symbol "%"  MODULO   pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')
     | Symbol "<"  LT       pos (accepted, pos')
     | Symbol ";"  SEMI     pos (accepted, pos')

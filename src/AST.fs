@@ -51,6 +51,8 @@ type NumericalOp =
     | Mult
     /// Division operation
     | Div
+    /// Modulo operation
+    | Mod
 
 
 /// Operation type used to distinguish binary logical expressions.

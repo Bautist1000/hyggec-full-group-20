@@ -86,6 +86,15 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                 | Some(env', lhs', rhs') ->
                     Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
                 | None -> None
+        | NumericalOp.Mod ->
+            match (lhs.Expr, rhs.Expr) with
+            | (IntVal(v1), IntVal(v2)) ->
+                Some(env, {node with Expr = IntVal(v1 % v2)})
+            | (_, _) ->
+                match (reduceLhsRhs env lhs rhs) with
+                | Some(env', lhs', rhs') ->
+                    Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
+                | None -> None
         | NumericalOp.Add ->
             match (lhs.Expr, rhs.Expr) with
             | (IntVal(v1), IntVal(v2)) ->

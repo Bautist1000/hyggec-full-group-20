@@ -167,6 +167,13 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tpe, tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | NumericalOp.Mod ->
+            match (binaryNumOpTyper "remainder" node.Pos env lhs rhs) with
+            | Ok(tpe, tlhs, trhs) ->
+                match tpe with
+                | TInt -> Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
+                | _ -> Error([(node.Pos, "Remainder expected arguments of type int")])
+            | Error(es) -> Error(es)
 
     | BinLogicOp(op, lhs, rhs) ->
         match op with

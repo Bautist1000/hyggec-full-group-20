@@ -216,6 +216,11 @@ let pMultExpr =
                     fun acc rhs ->
                         mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Div, acc, rhs))
                                 tok.Begin acc.Pos.Begin rhs.Pos.Begin
+            pToken MODULO
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Mod, acc, rhs))
+                                tok.Begin acc.Pos.Begin rhs.Pos.Begin
         ])
 
 

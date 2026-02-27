@@ -196,6 +196,11 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | LogicOp.Xor ->
+            match (binaryBoolOpTyper "xor" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
 
     | Not(arg) ->
         match (typer env arg) with

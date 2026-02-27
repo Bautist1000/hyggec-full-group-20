@@ -34,6 +34,8 @@ type Token =
     | AND
     /// Logical 'or'.
     | OR
+    /// Logical 'xor'.
+    | XOR
     /// Logical 'not'.
     | NOT
     /// Square root function
@@ -163,6 +165,7 @@ and internal mkKeywordOrIdent (s: string) =
     match s with
     | "and" -> AND
     | "or" -> OR
+    | "xor" -> XOR
     | "not" -> NOT
     | "sqrt" -> SQRT
     | "if" -> IF

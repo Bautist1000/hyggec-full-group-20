@@ -438,6 +438,9 @@ and internal doLetInitCodegen (env: ANFCodegenEnv) (init: TypedAST): ANFCodegenR
             let labelName = match op with
                             | RelationalOp.Eq -> "eq"
                             | RelationalOp.Less -> "less"
+                            | RelationalOp.LessEq -> "lesseq"
+                            | RelationalOp.Greater -> "greater"
+                            | RelationalOp.GreaterEq -> "greatereq"
             /// Label to jump to when the comparison is true
             let trueLabel = Util.genSymbol $"%O{labelName}_true"
             /// Label to mark the end of the comparison code
@@ -450,6 +453,12 @@ and internal doLetInitCodegen (env: ANFCodegenEnv) (init: TypedAST): ANFCodegenR
                     Asm(RV.BEQ(lhsReg, rhsReg, trueLabel))
                 | RelationalOp.Less ->
                     Asm(RV.BLT(lhsReg, rhsReg, trueLabel))
+                | RelationalOp.LessEq ->
+                    Asm(RV.BGE(rhsReg, lhsReg, trueLabel))
+                | RelationalOp.Greater ->
+                    Asm(RV.BLT(rhsReg, lhsReg, trueLabel))
+                | RelationalOp.GreaterEq ->
+                    Asm(RV.BGE(lhsReg, rhsReg, trueLabel))
 
             /// Generated code where we put everything
             let asm = (argLoadRes.Asm ++ targetLoadRes.Asm ++ opAsm)

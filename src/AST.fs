@@ -62,6 +62,8 @@ type LogicOp =
     | And
     /// Logical or operation.
     | Or
+    /// Logical xor operation.
+    | Xor
 
 /// Operation type used to distinguish binary relational expressions.
 [<RequireQualifiedAccess>]

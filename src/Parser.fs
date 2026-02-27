@@ -285,13 +285,19 @@ let pAndExpr =
 /// Parse a logical 'or' expression.
 let pOrExpr =
     chainl1 pAndExpr
-        (pToken OR
-            |>> fun tok ->
-                fun acc rhs ->
-                    mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Or, acc, rhs))
-                           tok.Begin acc.Pos.Begin rhs.Pos.End)
-
-
+        (choice [
+            (pToken OR
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Or, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+            (pToken XOR
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Xor, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+        ])
+        
 /// Parse an 'if-then-else' expression.
 let pIfExpr = choice [
     pToken IF ->>- pSimpleExpr ->>-

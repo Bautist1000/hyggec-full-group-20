@@ -1,0 +1,1 @@
+assert(if (true xor false) then true else false)

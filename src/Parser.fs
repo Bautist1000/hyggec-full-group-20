@@ -275,11 +275,19 @@ let pRelExpr =
 /// Parse a logical 'and' expression.
 let pAndExpr =
     chainl1 pRelExpr
-        (pToken AND
-            |>> fun tok ->
-                fun acc rhs ->
-                    mkNode (AST.Expr.BinLogicOp (AST.LogicOp.And, acc, rhs))
-                           tok.Begin acc.Pos.Begin rhs.Pos.End)
+        (choice [
+            (pToken AND
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.And, acc, rhs))
+                            tok.Begin acc.Pos.Begin rhs.Pos.End)
+
+            (pToken ANDS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.AndS, acc, rhs))
+                            tok.Begin acc.Pos.Begin rhs.Pos.End)
+        ])
 
 
 /// Parse a logical 'or' expression.
@@ -295,6 +303,11 @@ let pOrExpr =
                 |>> fun tok ->
                     fun acc rhs ->
                         mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Xor, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+            (pToken ORS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.OrS, acc, rhs))
                                tok.Begin acc.Pos.Begin rhs.Pos.End)
         ])
         

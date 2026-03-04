@@ -201,6 +201,17 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | LogicOp.AndS ->
+            match (binaryBoolOpTyper "short-circuit and" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+        | LogicOp.OrS ->
+            match (binaryBoolOpTyper "short-circuit or" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+
 
     | Not(arg) ->
         match (typer env arg) with

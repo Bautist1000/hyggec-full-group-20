@@ -176,6 +176,28 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
         // Combine argument code and sqrt instruction
         argAsm ++ sqrtAsm        
 
+    | BinLogicOp(LogicOp.AndS, lhs, rhs) ->
+        let endLabel = Util.genSymbol "ands_end"
+        (doCodegen env lhs)
+            .AddText(
+                RV.BEQZ(Reg.r(env.Target), endLabel),"short-circuit and, if lhs is false skip rhs"
+                )
+            ++ (doCodegen env rhs)
+            .AddText(
+                RV.LABEL(endLabel)
+            )
+
+    | BinLogicOp(LogicOp.OrS, lhs, rhs) ->
+        let endLabel = Util.genSymbol "ors_end"
+        (doCodegen env lhs)
+            .AddText(
+                RV.BNEZ(Reg.r(env.Target), endLabel),"short-circuit or, if lhs is true skip rhs"
+                )
+            ++ (doCodegen env rhs)
+            .AddText(
+                RV.LABEL(endLabel)
+            )
+
     | BinLogicOp(op, lhs, rhs) ->
         // Code generation for binary logical operations is very similar: we
         // compile the lhs and rhs giving them different target registers, and

@@ -64,6 +64,10 @@ type LogicOp =
     | Or
     /// Logical xor operation.
     | Xor
+    /// Short-circuit logical and operation.
+    | AndS
+    /// Short-circuit logical or operation.
+    | OrS
 
 /// Operation type used to distinguish binary relational expressions.
 [<RequireQualifiedAccess>]

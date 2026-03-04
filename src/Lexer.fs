@@ -36,6 +36,10 @@ type Token =
     | OR
     /// Logical 'xor'.
     | XOR
+    /// Short-circuit logical 'ands'
+    | ANDS
+    /// Short-circuit logical "ors"
+    | ORS
     /// Logical 'not'.
     | NOT
     /// Square root function
@@ -146,6 +150,8 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "<"  LT       pos (accepted, pos')
     | Symbol ";"  SEMI     pos (accepted, pos')
     | Symbol ":"  COLON    pos (accepted, pos')
+    | Symbol "&&" ANDS     pos (accepted, pos')
+    | Symbol "||" ORS      pos (accepted, pos')
     | Regex @"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?f" mkFloatLit       pos (accepted, pos')
     | Regex @"\d+"                               mkIntegerLit     pos (accepted, pos')
     | Regex "\"(\\\\\"|[^\"])*\""                mkStringLit      pos (accepted, pos')

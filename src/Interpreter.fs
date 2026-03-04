@@ -157,6 +157,28 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                 | Some(env', lhs', rhs') ->
                     Some(env', {node with Expr = BinLogicOp(op, lhs', rhs')})
                 | None -> None
+        | LogicOp.AndS ->
+            match lhs.Expr with
+            | BoolVal(false) -> 
+                Some(env, {node with Expr = BoolVal(false)})
+            | BoolVal(true) ->
+                Some(env,rhs)
+            | _ ->
+                match (reduce env lhs) with
+                | Some(env', lhs') ->
+                    Some(env', {node with Expr = BinLogicOp(op, lhs', rhs)})
+                | None -> None
+        | LogicOp.OrS ->
+            match lhs.Expr with
+            | BoolVal(true) -> 
+                Some(env, {node with Expr = BoolVal(true)})
+            | BoolVal(false) ->
+                Some(env,rhs)
+            | _ ->
+                match (reduce env lhs) with
+                | Some(env',lhs')->
+                    Some(env', {node with Expr = BinLogicOp(op, lhs', rhs)})
+                | None -> None
 
     | Not(arg) ->
         match arg.Expr with

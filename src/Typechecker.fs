@@ -310,6 +310,11 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinRelOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | RelationalOp.LessEq ->
+            match (binaryNumRelOpTyper "less than or equal to" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type =TBool; Expr = BinRelOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
 
     | ReadInt ->
         Ok {Pos = node.Pos; Env = env; Type = TInt; Expr = ReadInt}

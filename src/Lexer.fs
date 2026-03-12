@@ -48,6 +48,8 @@ type Token =
     | EQ
     /// Less-than symbol.
     | LT
+    /// Less-than-or-equal-to symbol.
+    | LTEQ
     /// Left arrow (assignment operator).
     | LARROW
     /// Right arrow (function type operator).
@@ -172,6 +174,7 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "*"  TIMES    pos (accepted, pos')
     | Symbol "/"  DIVIDED  pos (accepted, pos')
     | Symbol "%"  MODULO   pos (accepted, pos')
+    | Symbol "<="  LTEQ    pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')
     | Symbol "<"  LT       pos (accepted, pos')
     | Symbol ","  COMMA    pos (accepted, pos')

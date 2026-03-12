@@ -27,7 +27,6 @@ jobs:
       # 3️⃣ Build the F# project
       - name: Build F# project
         run: |
-          cd src
           dotnet build
 
       # 4️⃣ Run Hyge tests

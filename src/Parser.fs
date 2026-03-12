@@ -423,9 +423,25 @@ let pRelExpr =
                 |>> fun (tok, rhs) ->
                     mkNode (AST.Expr.BinRelOp (AST.RelationalOp.Eq, lhs, rhs))
                            tok.Begin lhs.Pos.Begin rhs.Pos.End
+                           
+            pToken LEQ ->>- pAddExpr
+                |>> fun (tok, rhs) ->
+                    mkNode (AST.Expr.BinRelOp (AST.RelationalOp.LessEq, lhs, rhs))
+                           tok.Begin lhs.Pos.Begin rhs.Pos.End
+
+            pToken GEQ ->>- pAddExpr
+                |>> fun (rok, rhs) ->
+                    mkNode (AST.Expr.BinRelOp (AST.RelationalOp.GreaterEq, lhs, rhs))
+                           rok.Begin lhs.Pos.Begin rhs.Pos.End
+
             pToken LT ->>- pAddExpr
                 |>> fun (tok, rhs) ->
                     mkNode (AST.Expr.BinRelOp (AST.RelationalOp.Less, lhs, rhs))
+                           tok.Begin lhs.Pos.Begin rhs.Pos.End
+
+            pToken GT ->>- pAddExpr
+                |>> fun (tok, rhs) ->
+                    mkNode (AST.Expr.BinRelOp (AST.RelationalOp.Greater, lhs, rhs))
                            tok.Begin lhs.Pos.Begin rhs.Pos.End
             preturn lhs // Default case if no operator above matches
         ]

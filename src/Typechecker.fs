@@ -263,8 +263,18 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinRelOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
-        | RelationalOp.Less ->
-            match (binaryNumRelOpTyper "less than" node.Pos env lhs rhs) with
+        | RelationalOp.LessEq
+        | RelationalOp.Less
+        | RelationalOp.Greater
+        | RelationalOp.GreaterEq ->
+            let msg = 
+                match op with
+                | RelationalOp.Less -> "less than"
+                | RelationalOp.LessEq -> "less than or equal to"
+                | RelationalOp.Greater -> "greater than"
+                | RelationalOp.GreaterEq -> "greater than or equal to"
+                | _ -> failwith $"BUG: unexpected relational operator: %O{op}"
+            match binaryNumRelOpTyper msg node.Pos env lhs rhs with
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinRelOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)

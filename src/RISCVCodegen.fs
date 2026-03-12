@@ -211,6 +211,9 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
             let labelName = match op with
                             | RelationalOp.Eq -> "eq"
                             | RelationalOp.Less -> "less"
+                            | RelationalOp.LessEq -> "lesseq"
+                            | RelationalOp.Greater -> "greater"
+                            | RelationalOp.GreaterEq -> "greatereq"
             /// Label to jump to when the comparison is true
             let trueLabel = Util.genSymbol $"%O{labelName}_true"
             /// Label to mark the end of the comparison code
@@ -223,7 +226,12 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.BEQ(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
                 | RelationalOp.Less ->
                     Asm(RV.BLT(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
-
+                | RelationalOp.LessEq ->
+                    Asm(RV.BGE(Reg.r(rtarget), Reg.r(env.Target), trueLabel))
+                | RelationalOp.Greater ->
+                    Asm(RV.BLT(Reg.r(rtarget), Reg.r(env.Target), trueLabel))
+                | RelationalOp.GreaterEq ->
+                    Asm(RV.BGE(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
                 .AddText([
@@ -245,6 +253,15 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.FEQ_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
                 | RelationalOp.Less ->
                     Asm(RV.FLT_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | RelationalOp.LessEq ->
+                    Asm(RV.FLE_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | RelationalOp.Greater ->
+                    Asm(RV.FLT_S(Reg.r(env.Target), FPReg.r(rfptarget), FPReg.r(env.FPTarget)))
+                | RelationalOp.GreaterEq ->
+                    Asm(RV.FLE_S(Reg.r(env.Target), FPReg.r(rfptarget), FPReg.r(env.FPTarget)))
+                // Note that RISC-V does not have a direct instruction for 'greater than' and 'greater than or equal to' between floats.
+                // We can use the 'less than' and 'less than or equal to' instructions by swapping the operands (registers)
+                
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
         | t ->
@@ -757,6 +774,12 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
 
     | Pointer(_) ->
         failwith "BUG: pointers cannot be compiled (by design!)"
+
+    | UnionCons(_, _) ->
+        failwith "BUG: UnionCons codegen is not implemented yet"
+
+    | Match(_, _) ->
+        failwith "BUG: Match codegen is not implemented yet"
 
 /// Generate code to save the given registers on the stack, before a RARS system
 /// call. Register a7 (which holds the system call number) is backed-up by

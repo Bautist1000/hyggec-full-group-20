@@ -71,6 +71,12 @@ type RelationalOp =
     | Eq
     /// Less-than operation.
     | Less
+    /// Less-than-or-equal operation.
+    | LessEq
+    /// Greater-than operation.
+    | Greater
+    /// Greater-than-or-equal operation.
+    | GreaterEq
 
 /// Node of the Abstract Syntax Tree of a Hygge expression.  The meaning of the
 /// two type arguments is the following: 'E specifies what typing environment

@@ -52,8 +52,14 @@ and Pretype =
 type NumericalOp =
     /// Addition operation.
     | Add
+    /// Subtraction operation
+    | Sub
     /// Multiplication operation.
     | Mult
+    /// Division operation
+    | Div
+    /// Modulo operation
+    | Mod
 
 
 /// Operation type used to distinguish binary logical expressions.
@@ -63,6 +69,12 @@ type LogicOp =
     | And
     /// Logical or operation.
     | Or
+    /// Logical xor operation.
+    | Xor
+    /// Short-circuit logical and operation.
+    | AndS
+    /// Short-circuit logical or operation.
+    | OrS
 
 /// Operation type used to distinguish binary relational expressions.
 [<RequireQualifiedAccess>]
@@ -122,6 +134,9 @@ and Expr<'E,'T> =
 
     /// Logical not.
     | Not of arg: Node<'E,'T>
+
+    /// Square root operation (Only floating point numbers)
+    | Sqrt of arg: Node<'E,'T>
 
     /// Binary relational operation between lhs and rhs.
     | BinRelOp of op: RelationalOp

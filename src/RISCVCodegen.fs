@@ -130,8 +130,17 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 | NumericalOp.Add ->
                     Asm(RV.ADD(Reg.r(env.Target),
                                Reg.r(env.Target), Reg.r(rtarget)))
+                | NumericalOp.Sub ->
+                    Asm(RV.SUB(Reg.r(env.Target),
+                               Reg.r(env.Target), Reg.r(rtarget)))  
                 | NumericalOp.Mult ->
                     Asm(RV.MUL(Reg.r(env.Target),
+                               Reg.r(env.Target), Reg.r(rtarget)))
+                | NumericalOp.Div ->
+                    Asm(RV.DIV(Reg.r(env.Target),
+                               Reg.r(env.Target), Reg.r(rtarget)))
+                | NumericalOp.Mod ->
+                    Asm(RV.REM(Reg.r(env.Target),
                                Reg.r(env.Target), Reg.r(rtarget)))
             // Put everything together
             lAsm ++ rAsm ++ opAsm
@@ -146,13 +155,51 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 | NumericalOp.Add ->
                     Asm(RV.FADD_S(FPReg.r(env.FPTarget),
                                   FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | NumericalOp.Sub ->
+                    Asm(RV.FSUB_S(FPReg.r(env.FPTarget),
+                                  FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
                 | NumericalOp.Mult ->
                     Asm(RV.FMUL_S(FPReg.r(env.FPTarget),
                                   FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | NumericalOp.Div ->
+                    Asm(RV.FDIV_S(FPReg.r(env.FPTarget),
+                                  FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | NumericalOp.Mod ->
+                    failwith "Remainder operation not defined for TFloat. This should not happen."
             // Put everything together
             lAsm ++ rAsm ++ opAsm
         | t ->
             failwith $"BUG: numerical operation codegen invoked on invalid type %O{t}"
+
+    | Sqrt(arg) ->
+        // First, generate code for the argument in the floating-point target
+        let argAsm = doCodegen env arg
+        // Compute square root using RISC-V floating-point sqrt instruction
+        let sqrtAsm = Asm(RV.FSQRT_S(FPReg.r(env.FPTarget), FPReg.r(env.FPTarget)))
+        // Combine argument code and sqrt instruction
+        argAsm ++ sqrtAsm        
+
+    | BinLogicOp(LogicOp.AndS, lhs, rhs) ->
+        let endLabel = Util.genSymbol "ands_end"
+        (doCodegen env lhs)
+            .AddText(
+                RV.BEQZ(Reg.r(env.Target), endLabel),"short-circuit and, if lhs is false skip rhs"
+                )
+            ++ (doCodegen env rhs)
+            .AddText(
+                RV.LABEL(endLabel)
+            )
+
+    | BinLogicOp(LogicOp.OrS, lhs, rhs) ->
+        let endLabel = Util.genSymbol "ors_end"
+        (doCodegen env lhs)
+            .AddText(
+                RV.BNEZ(Reg.r(env.Target), endLabel),"short-circuit or, if lhs is true skip rhs"
+                )
+            ++ (doCodegen env rhs)
+            .AddText(
+                RV.LABEL(endLabel)
+            )
 
     | BinLogicOp(op, lhs, rhs) ->
         // Code generation for binary logical operations is very similar: we
@@ -172,6 +219,8 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 Asm(RV.AND(Reg.r(env.Target), Reg.r(env.Target), Reg.r(rtarget)))
             | LogicOp.Or ->
                 Asm(RV.OR(Reg.r(env.Target), Reg.r(env.Target), Reg.r(rtarget)))
+            | LogicOp.Xor ->
+                Asm(RV.XOR(Reg.r(env.Target), Reg.r(env.Target), Reg.r(rtarget)))
         // Put everything together
         lAsm ++ rAsm ++ opAsm
 

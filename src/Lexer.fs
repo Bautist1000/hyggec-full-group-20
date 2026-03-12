@@ -22,14 +22,28 @@ type Token =
     | RCURLY
     /// Plus sign.
     | PLUS
+    /// Minus sign
+    | MINUS
     /// Multiplication sign.
     | TIMES
+    /// Division sign
+    | DIVIDED
+    /// Modulo sign
+    | MODULO
     /// Logical 'and'.
     | AND
     /// Logical 'or'.
     | OR
+    /// Logical 'xor'.
+    | XOR
+    /// Short-circuit logical 'ands'
+    | ANDS
+    /// Short-circuit logical "ors"
+    | ORS
     /// Logical 'not'.
     | NOT
+    /// Square root function
+    | SQRT
     /// Equality symbol.
     | EQ
     /// Less-than symbol.
@@ -154,12 +168,17 @@ let rec internal tokenizeRec (input: string) (pos: Position)
     | Symbol "{"  LCURLY   pos (accepted, pos')
     | Symbol "}"  RCURLY   pos (accepted, pos')
     | Symbol "+"  PLUS     pos (accepted, pos')
+    | Symbol "-"  MINUS    pos (accepted, pos')
     | Symbol "*"  TIMES    pos (accepted, pos')
+    | Symbol "/"  DIVIDED  pos (accepted, pos')
+    | Symbol "%"  MODULO   pos (accepted, pos')
     | Symbol "="  EQ       pos (accepted, pos')
     | Symbol "<"  LT       pos (accepted, pos')
     | Symbol ","  COMMA    pos (accepted, pos')
     | Symbol ";"  SEMI     pos (accepted, pos')
     | Symbol ":"  COLON    pos (accepted, pos')
+    | Symbol "&&" ANDS     pos (accepted, pos')
+    | Symbol "||" ORS      pos (accepted, pos')
     | Regex @"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?f" mkFloatLit       pos (accepted, pos')
     | Regex @"\d+"                               mkIntegerLit     pos (accepted, pos')
     | Regex "\"(\\\\\"|[^\"])*\""                mkStringLit      pos (accepted, pos')
@@ -181,7 +200,9 @@ and internal mkKeywordOrIdent (s: string) =
     match s with
     | "and" -> AND
     | "or" -> OR
+    | "xor" -> XOR
     | "not" -> NOT
+    | "sqrt" -> SQRT
     | "if" -> IF
     | "then" -> THEN
     | "else" -> ELSE

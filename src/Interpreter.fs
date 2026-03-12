@@ -110,6 +110,26 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                 | Some(env', lhs', rhs') ->
                     Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
                 | None -> None
+        | NumericalOp.Div ->
+            match (lhs.Expr, rhs.Expr) with
+            | (IntVal(v1), IntVal(v2)) ->
+                Some(env, {node with Expr = IntVal(v1 / v2)})
+            | (FloatVal(v1), FloatVal(v2)) ->
+                Some(env, {node with Expr = FloatVal(v1 / v2)})
+            | (_, _) ->
+                match (reduceLhsRhs env lhs rhs) with
+                | Some(env', lhs', rhs') ->
+                    Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
+                | None -> None
+        | NumericalOp.Mod ->
+            match (lhs.Expr, rhs.Expr) with
+            | (IntVal(v1), IntVal(v2)) ->
+                Some(env, {node with Expr = IntVal(v1 % v2)})
+            | (_, _) ->
+                match (reduceLhsRhs env lhs rhs) with
+                | Some(env', lhs', rhs') ->
+                    Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
+                | None -> None
         | NumericalOp.Add ->
             match (lhs.Expr, rhs.Expr) with
             | (IntVal(v1), IntVal(v2)) ->
@@ -121,6 +141,27 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                 | Some(env', lhs', rhs') ->
                     Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
                 | None -> None
+        | NumericalOp.Sub ->
+            match (lhs.Expr, rhs.Expr) with
+            | (IntVal(v1), IntVal(v2)) ->
+                Some(env, {node with Expr = IntVal(v1 - v2)})
+            | (FloatVal(v1), FloatVal(v2)) ->
+                Some(env, {node with Expr = FloatVal(v1 - v2)})
+            | (_, _) ->
+                match (reduceLhsRhs env lhs rhs) with
+                | Some(env', lhs', rhs') ->
+                    Some(env', {node with Expr = BinNumOp(op, lhs', rhs')})
+                | None -> None
+
+    | Sqrt(arg) ->
+        if isValue arg then
+            match arg.Expr with
+            | FloatVal(f) -> Some(env, {node with Expr = FloatVal(sqrt f)})
+            | _ -> failwith "sqrt expects a float"
+        else
+            match reduce env arg with
+            | Some(env', arg') -> Some(env', {node with Expr = Sqrt(arg')})
+            | None -> None
 
     | BinLogicOp(op, lhs, rhs) ->
         match op with
@@ -141,6 +182,37 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                 match (reduceLhsRhs env lhs rhs) with
                 | Some(env', lhs', rhs') ->
                     Some(env', {node with Expr = BinLogicOp(op, lhs', rhs')})
+                | None -> None
+        | LogicOp.Xor ->
+            match (lhs.Expr, rhs.Expr) with
+            | (BoolVal(v1), BoolVal(v2)) ->
+                Some(env, {node with Expr = BoolVal((v1 && not v2) || (not v1 && v2))})
+            | (_, _) ->
+                match (reduceLhsRhs env lhs rhs) with
+                | Some(env', lhs', rhs') ->
+                    Some(env', {node with Expr = BinLogicOp(op, lhs', rhs')})
+                | None -> None
+        | LogicOp.AndS ->
+            match lhs.Expr with
+            | BoolVal(false) -> 
+                Some(env, {node with Expr = BoolVal(false)})
+            | BoolVal(true) ->
+                Some(env,rhs)
+            | _ ->
+                match (reduce env lhs) with
+                | Some(env', lhs') ->
+                    Some(env', {node with Expr = BinLogicOp(op, lhs', rhs)})
+                | None -> None
+        | LogicOp.OrS ->
+            match lhs.Expr with
+            | BoolVal(true) -> 
+                Some(env, {node with Expr = BoolVal(true)})
+            | BoolVal(false) ->
+                Some(env,rhs)
+            | _ ->
+                match (reduce env lhs) with
+                | Some(env',lhs')->
+                    Some(env', {node with Expr = BinLogicOp(op, lhs', rhs)})
                 | None -> None
 
     | Not(arg) ->

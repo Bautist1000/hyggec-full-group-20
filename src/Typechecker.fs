@@ -228,11 +228,37 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tpe, tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | NumericalOp.Sub ->
+            match (binaryNumOpTyper "subtraction" node.Pos env lhs rhs) with
+            | Ok(tpe, tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
         | NumericalOp.Mult ->
             match (binaryNumOpTyper "multiplication" node.Pos env lhs rhs) with
             | Ok(tpe, tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | NumericalOp.Div ->
+            match (binaryNumOpTyper "division" node.Pos env lhs rhs) with
+            | Ok(tpe, tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+        | NumericalOp.Mod ->
+            match (binaryNumOpTyper "remainder" node.Pos env lhs rhs) with
+            | Ok(tpe, tlhs, trhs) ->
+                match tpe with
+                | TInt -> Ok { Pos = node.Pos; Env = env; Type = tpe; Expr = BinNumOp(op, tlhs, trhs) }
+                | _ -> Error([(node.Pos, "Remainder expected arguments of type int")])
+            | Error(es) -> Error(es)
+
+    | Sqrt(arg) ->
+        match typer env arg with
+        | Ok(targ) ->
+            if isSubtypeOf env targ.Type TFloat then
+                Ok { Pos = node.Pos; Env = env; Type = TFloat; Expr = Sqrt(targ) }
+            else
+            Error [ (node.Pos, $"sqrt: expected argument of type %O{TFloat}, found %O{targ.Type}") ]
+        | Error(es) -> Error(es)
 
     | BinLogicOp(op, lhs, rhs) ->
         match op with
@@ -246,6 +272,22 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
             | Ok(tlhs, trhs) ->
                 Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
             | Error(es) -> Error(es)
+        | LogicOp.Xor ->
+            match (binaryBoolOpTyper "xor" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+        | LogicOp.AndS ->
+            match (binaryBoolOpTyper "short-circuit and" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+        | LogicOp.OrS ->
+            match (binaryBoolOpTyper "short-circuit or" node.Pos env lhs rhs) with
+            | Ok(tlhs, trhs) ->
+                Ok { Pos = node.Pos; Env = env; Type = TBool; Expr = BinLogicOp(op, tlhs, trhs) }
+            | Error(es) -> Error(es)
+
 
     | Not(arg) ->
         match (typer env arg) with

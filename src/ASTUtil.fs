@@ -27,7 +27,8 @@ let rec subst (node: Node<'E,'T>) (var: string) (sub: Node<'E,'T>): Node<'E,'T> 
 
     | BinNumOp(op, lhs, rhs) ->
         {node with Expr = BinNumOp(op, (subst lhs var sub), (subst rhs var sub))}
-
+    | Sqrt(arg) ->
+        { node with Expr = Sqrt(subst arg var sub) }
     | BinLogicOp(op, lhs, rhs) ->
         {node with Expr = BinLogicOp(op, (subst lhs var sub), (subst rhs var sub))}
     | Not(arg) ->

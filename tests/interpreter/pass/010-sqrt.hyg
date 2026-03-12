@@ -1,0 +1,11 @@
+// Integer sqrt 
+
+assert(sqrt(9f) = 3f);
+assert(sqrt(0f) = 0f);
+assert(sqrt(1f) = 1f);
+assert(sqrt(4f) = 2f);
+assert(sqrt(2.25f) = 1.5f);
+// Nested sqrt
+assert(sqrt(sqrt(16f)) = 2f);
+// Sqrt of an expression
+assert(sqrt(1f + 8f) = 3f)

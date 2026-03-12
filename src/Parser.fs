@@ -245,6 +245,20 @@ let pPrintLn =
         |>> fun ((tok1, expr), tok2) ->
             mkNode (AST.Expr.PrintLn expr) tok1.Begin tok1.Begin tok2.End
 
+/// Parse a sqrt(...) expression, with optional type ascription.
+let pSqrt =
+    pToken SQRT ->>- (pToken LPAREN >>- pSimpleExpr) ->>- pToken RPAREN
+    >>= fun ((tokSqrt, expr), tokR) ->
+        // Create the basic Sqrt node
+        let node = mkNode (AST.Expr.Sqrt expr) tokSqrt.Begin tokSqrt.Begin tokR.End
+        // Optionally parse ": type" immediately after
+        choice [
+            pToken COLON ->>- pPretype
+                |>> fun (tokColon, tpe) ->
+                    mkNode (AST.Expr.Ascription(tpe, node))
+                           tokColon.Begin node.Pos.Begin tpe.Pos.End
+            preturn node
+        ]
 
 /// Parse an assert(...) expression.
 let pAssert =
@@ -385,6 +399,7 @@ let pUnaryExpr' = choice [
     pReadInt
     pReadFloat
     pPrint
+    pSqrt
     pPrintLn
     pAssert
     pAscriptionExpr
@@ -400,6 +415,16 @@ let pMultExpr =
                     fun acc rhs ->
                         mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Mult, acc, rhs))
                                tok.Begin acc.Pos.Begin rhs.Pos.End
+            pToken DIVIDED
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Div, acc, rhs))
+                                tok.Begin acc.Pos.Begin rhs.Pos.Begin
+            pToken MODULO
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Mod, acc, rhs))
+                                tok.Begin acc.Pos.Begin rhs.Pos.Begin
         ])
 
 
@@ -412,8 +437,13 @@ let pAddExpr =
                     fun acc rhs ->
                         mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Add, acc, rhs))
                                tok.Begin acc.Pos.Begin rhs.Pos.End
+                               
+            pToken MINUS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinNumOp (AST.NumericalOp.Sub, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End
         ])
-
 
 /// Parse a relational expression.
 let pRelExpr =
@@ -434,23 +464,42 @@ let pRelExpr =
 /// Parse a logical 'and' expression.
 let pAndExpr =
     chainl1 pRelExpr
-        (pToken AND
-            |>> fun tok ->
-                fun acc rhs ->
-                    mkNode (AST.Expr.BinLogicOp (AST.LogicOp.And, acc, rhs))
-                           tok.Begin acc.Pos.Begin rhs.Pos.End)
+        (choice [
+            (pToken AND
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.And, acc, rhs))
+                            tok.Begin acc.Pos.Begin rhs.Pos.End)
+
+            (pToken ANDS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.AndS, acc, rhs))
+                            tok.Begin acc.Pos.Begin rhs.Pos.End)
+        ])
 
 
 /// Parse a logical 'or' expression.
 let pOrExpr =
     chainl1 pAndExpr
-        (pToken OR
-            |>> fun tok ->
-                fun acc rhs ->
-                    mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Or, acc, rhs))
-                           tok.Begin acc.Pos.Begin rhs.Pos.End)
-
-
+        (choice [
+            (pToken OR
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Or, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+            (pToken XOR
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.Xor, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+            (pToken ORS
+                |>> fun tok ->
+                    fun acc rhs ->
+                        mkNode (AST.Expr.BinLogicOp (AST.LogicOp.OrS, acc, rhs))
+                               tok.Begin acc.Pos.Begin rhs.Pos.End)
+        ])
+        
 /// Parse an 'if-then-else' expression.
 let pIfExpr = choice [
     pToken IF ->>- pSimpleExpr ->>-

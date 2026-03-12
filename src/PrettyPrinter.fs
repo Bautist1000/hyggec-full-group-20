@@ -122,6 +122,8 @@ let rec internal formatASTRec (node: AST.Node<'E,'T>): Tree =
         mkTree "Print" node [("arg", formatASTRec arg)]
     | PrintLn(arg) ->
         mkTree "PrintLn" node [("arg", formatASTRec arg)]
+    | Sqrt(arg) ->
+        mkTree "Sqrt" node [("arg", formatASTRec arg)]
     | If(condition, ifTrue, ifFalse) ->
         mkTree "Conditional" node [("condition", formatASTRec condition)
                                    ("ifTrue", formatASTRec ifTrue)

@@ -261,6 +261,7 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                             | RelationalOp.Eq -> "eq"
                             | RelationalOp.Less -> "less"
                             | RelationalOp.LessEq -> "lesseq"
+                            | RelationalOp.Greater -> "greater"
             /// Label to jump to when the comparison is true
             let trueLabel = Util.genSymbol $"%O{labelName}_true"
             /// Label to mark the end of the comparison code
@@ -275,6 +276,8 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.BLT(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
                 | RelationalOp.LessEq ->
                     Asm(RV.BLE(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
+                | RelationalOp.Greater ->
+                    Asm(RV.BGT(Reg.r(env.Target), Reg.r(rtarget), trueLabel))
 
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
@@ -299,6 +302,8 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                     Asm(RV.FLT_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
                 | RelationalOp.LessEq ->
                     Asm(RV.FLE_S(Reg.r(env.Target), FPReg.r(env.FPTarget), FPReg.r(rfptarget)))
+                | RelationalOp.Greater ->
+                    Asm(RV.FLT_S(Reg.r(env.Target), FPReg.r(rfptarget), FPReg.r(env.FPTarget)))
             // Put everything together
             (lAsm ++ rAsm ++ opAsm)
         | t ->

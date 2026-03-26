@@ -485,6 +485,34 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
         | Error(es), Ok(_) -> Error(es)
         | Error(esCond), Error(esBody) -> Error(esCond @ esBody)
 
+    | For(name, init, cond, step, body) ->
+        let rInit = typer env init
+      
+
+        let env' = 
+            match rInit with
+            | Ok(tinit) -> 
+                { env with Vars = env.Vars.Add(name, tinit.Type)
+                           Mutables = env.Mutables.Add(name) }
+            | Error(_) ->
+                { env with Vars = env.Vars.Add(name, TUnit)
+                           Mutables = env.Mutables.Add(name) }
+
+        let rCond = typer env' cond
+        let rStep = typer env' step
+        let rBody = typer env' body
+
+        let errors = collectErrors [rInit; rCond; rStep; rBody]
+        if not errors.IsEmpty then 
+            Error(errors)
+        else
+            match (rInit, rCond, rStep, rBody) with
+            | (Ok(tInit), Ok(tCond), Ok(tStep), Ok(tBody)) when (isSubtypeOf env tCond.Type TBool)  ->
+                Ok { Pos = node.Pos; Env = env'; Type = TUnit; Expr = For(name, tInit, tCond, tStep, tBody)}
+            | (Ok(_), Ok(tCond), Ok(_), Ok(_)) ->
+                Error([(cond.Pos, $"'for' condition: expected type %O{TBool}, "
+                                  + $"found %O{tCond.Type}")])
+   
     | Lambda(args, body) ->
         let (argNames, argPretypes) = List.unzip args
         /// Duplicate names in 'lambda' arguments

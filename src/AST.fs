@@ -210,6 +210,13 @@ and Expr<'E,'T> =
     | While of cond: Node<'E,'T>
              * body: Node<'E,'T>
 
+    // 'For' loop with a Scoed Variable: as long as 'cond' is true, repeat the 'body'.
+    | For of name: string       // let mutable x
+            * init: Node<'E,'T> // x= any
+            * cond: Node<'E,'T> // boolean condition
+            * step: Node<'E,'T> // step expresion
+            * body: Node<'E,'T> // body expression
+
     /// Lambda term, i.e. function instance.
     | Lambda of args: List<string * PretypeNode>
               * body: Node<'E,'T>

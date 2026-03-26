@@ -466,6 +466,22 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                            {body with Expr = UnitVal})
         Some(env, {node with Expr = rewritten})
 
+    | For(name,init,cond,step,body) ->
+        /// Rewritten 'for' loop
+        
+        let nextInit = { init with Expr = Var(name) }
+        let nextFor = { node with Expr = For(name, nextInit, cond, step, body) }
+
+        let loopSeq = { body with Expr = Seq([body; step; nextFor]) }
+
+        let loopIf = { cond with Expr = If(cond, loopSeq, { body with Expr = UnitVal }) }
+
+        let rewritten = LetMut(name, init, loopIf)
+
+        Some(env, { node with Expr = rewritten })
+
+
+
     | Application(expr, args) ->
         match expr.Expr with
         | Lambda(lamArgs, body) ->

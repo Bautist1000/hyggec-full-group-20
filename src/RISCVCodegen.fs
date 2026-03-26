@@ -630,40 +630,14 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 (RV.LABEL(whileEndLabel), "")
             ])
 
-    | For(name, init, cond,step, body) ->
-        /// Label to mark the beginning of the 'for' loop
-        let forBeginLabel = Util.genSymbol "for_loop_begin"
-        /// Label to mark the beginning of the 'for' loop body
-        let forBodyBeginLabel = Util.genSymbol "for_body_begin"
-        /// Label to mark the end of the 'for' loop
-        let forEndLabel = Util.genSymbol "for_loop_end"
+    | For(name, init, cond, step, body) ->
+        let loopContent = { node with Expr = Seq([body; step]) ; Type = step.Type}
+        let nextLoop = { node with Expr = While(cond, loopContent); Type = TUnit }
+        let loopExit = { node with Expr = UnitVal; Type = TUnit }
+        let condition = {node with Expr = If(cond, nextLoop,loopExit)}
+        let initVar = {node with Expr = LetMut(name, init, condition); Type = TUnit}
 
-        let forCondLabel = Util.genSymbol "for_cond"
-
-        (doCodegen env init)
-
-            .AddText([
-                (RV.LABEL(forCondLabel), "Beginning of the 'for' loop condition")
-            ])
-            ++ (doCodegen env cond)
-                .AddText([
-                    (RV.BNEZ(Reg.r(env.Target), forBeginLabel),
-                     "Jump to loop body if 'for' condition is true")
-                    (RV.LA(Reg.r(env.Target), forEndLabel),
-                     "Load address of label at the end of the 'for' loop")
-                    (RV.JR(Reg.r(env.Target)), "Jump to the end of the loop")
-                    (RV.LABEL(forBodyBeginLabel),
-                     "Body of the 'for' loop starts here")
-                ])
-            
-            ++ (doCodegen env body)
-            ++ (doCodegen env step)
-            .AddText([
-            (RV.LA(Reg.r(env.Target), forCondLabel), "Load address of the loop condition")
-            (RV.JR(Reg.r(env.Target)), "Jump back to the condition")
-            (RV.LABEL(forEndLabel), "End of the 'for' loop")
-        ])
-  
+        doCodegen env initVar
 
 
     | Lambda(args, body) ->

@@ -1,0 +1,36 @@
+name: Run Hyge tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Install .NET SDK
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.103'  # or the version your course uses
+
+      # 3️⃣ Build the F# project
+      - name: Build F# project
+        run: |
+          dotnet build
+
+      # 4️⃣ Run Hyge tests
+      - name: Run Hyge tests
+        run: |
+          ./hyggec test
+         

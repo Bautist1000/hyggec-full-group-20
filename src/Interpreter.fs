@@ -467,20 +467,12 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
         Some(env, {node with Expr = rewritten})
 
     | For(name,init,cond,step,body) ->
-        /// Rewritten 'for' loop
+        /// Rewritten 'for' loop 
         
-        let nextInit = { init with Expr = Var(name) }
-        let nextFor = { node with Expr = For(name, nextInit, cond, step, body) }
-
-        let loopSeq = { body with Expr = Seq([body; step; nextFor]) }
-
-        let loopIf = { cond with Expr = If(cond, loopSeq, { body with Expr = UnitVal }) }
-
-        let rewritten = LetMut(name, init, loopIf)
-
-        Some(env, { node with Expr = rewritten })
-
-
+        let loopBody = {body with Expr = Seq([body; step])}
+        let nextloop = {body with Expr = While(cond, loopBody)}
+        let rewritten = LetMut(name, init, nextloop)
+        Some(env, {node with Expr = rewritten})  
 
     | Application(expr, args) ->
         match expr.Expr with

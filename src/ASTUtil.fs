@@ -93,6 +93,8 @@ let rec subst (node: Node<'E,'T>) (var: string) (sub: Node<'E,'T>): Node<'E,'T> 
         let substBody = subst body var sub
         {node with Expr = While(substCond, substBody)}
 
+    | For(name, init, cond, step, body) when name = var ->
+        {node with Expr = For(name, (subst init var sub), cond, step, body)}
     | For(name, init, cond, step, body) ->
         let substInit = subst init var sub
         let substCond = subst cond var sub

@@ -551,11 +551,12 @@ let pSimpleExpr' = choice [
         (pToken LPAREN >>-                              // (
         pToken LET >>- pToken MUTABLE >>- pIdent ->>-   // let mutable x
         (pToken EQ >>- pSimpleExpr) ->>-                // =
-        (pToken SEMI >>- pSimpleExpr) ->>-              // ; e_c
-        (pToken SEMI >>- pSimpleExpr) ->>-              // ; e_u
+        (pToken SEMI >>- pSimpleExpr) ->>-              // ; ec
+        (pToken SEMI >>- pSimpleExpr) ->>-              // ; eu
         (pToken RPAREN >>- pSimpleExpr))                //) eb
             |>> fun(tokFor,(((((_,name),ei),ec),eu),eb)) ->
-                mkNode (AST.Expr.For (name, ei, ec, eu, eb)) tokFor.Begin tokFor.Begin eb.Pos.End
+                mkNode (AST.Expr.For (name, ei, ec, eu, eb))
+                       tokFor.Begin tokFor.Begin eb.Pos.End
 
     // Lambda expression: fun (args) -> body
     pToken FUN ->>-

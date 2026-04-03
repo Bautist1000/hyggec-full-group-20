@@ -88,6 +88,8 @@ type Token =
     | WHILE
     /// Keyword 'do'.
     | DO
+    /// Keyword 'for'
+    | FOR
     /// Keyword 'fun'.
     | FUN
     /// Keyword 'struct'.
@@ -222,6 +224,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "mutable" -> MUTABLE
     | "while" -> WHILE
     | "do" -> DO
+    | "for" -> FOR
     | "fun" -> FUN
     | "struct" -> STRUCT
     | "union" -> UNION

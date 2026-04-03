@@ -490,6 +490,40 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
         | Error(es), Ok(_) -> Error(es)
         | Error(esCond), Error(esBody) -> Error(esCond @ esBody)
 
+    | For(name, init, cond, step, body) ->
+        let rInit = typer env init
+        let forEnv =
+            match rInit with
+            | Ok(tinit) ->
+                { env with Vars = env.Vars.Add(name, tinit.Type)
+                           Mutables = env.Mutables.Add(name) }
+            | Error(_) ->
+                // Continue type-checking the loop internals to collect more
+                // errors, using a fallback type for the loop variable.
+                { env with Vars = env.Vars.Add(name, TUnit)
+                           Mutables = env.Mutables.Add(name) }
+
+        let rCond = typer forEnv cond
+        let rStep = typer forEnv step
+        let rBody = typer forEnv body
+
+        let condTypeErrors =
+            match rCond with
+            | Ok(tCond) when not (isSubtypeOf env tCond.Type TBool) ->
+                [(cond.Pos, $"'for' condition: expected type %O{TBool}, "
+                            + $"found %O{tCond.Type}")]
+            | _ -> []
+        let errors = condTypeErrors @ (collectErrors [rInit; rCond; rStep; rBody])
+        if not errors.IsEmpty then
+            Error(errors)
+        else
+            let tInit = getOkValue rInit
+            let tCond = getOkValue rCond
+            let tStep = getOkValue rStep
+            let tBody = getOkValue rBody
+            Ok { Pos = node.Pos; Env = env; Type = TUnit;
+                 Expr = For(name, tInit, tCond, tStep, tBody) }
+   
     | Lambda(args, body) ->
         let (argNames, argPretypes) = List.unzip args
         /// Duplicate names in 'lambda' arguments

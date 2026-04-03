@@ -1,0 +1,10 @@
+for(let mutable x= 0; x < 3; x<- x+1) {
+    print(x)
+};
+
+let a = 0;
+let mutable s = 0;
+for(let mutable x = a + 1 ; x < a + 3; x <- x + 1) {
+    s <- s + x
+};
+assert(s = 3)

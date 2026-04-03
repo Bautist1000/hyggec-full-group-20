@@ -93,6 +93,15 @@ let rec subst (node: Node<'E,'T>) (var: string) (sub: Node<'E,'T>): Node<'E,'T> 
         let substBody = subst body var sub
         {node with Expr = While(substCond, substBody)}
 
+    | For(name, init, cond, step, body) when name = var ->
+        {node with Expr = For(name, (subst init var sub), cond, step, body)}
+    | For(name, init, cond, step, body) ->
+        let substInit = subst init var sub
+        let substCond = subst cond var sub
+        let substStep = subst step var sub
+        let substBody = subst body var sub
+        {node with Expr = For(name, substInit, substCond, substStep, substBody)}
+
     | Lambda(args, body) ->
         /// Arguments of this lambda term, without their pretypes
         let (argVars, _) = List.unzip args
@@ -157,6 +166,10 @@ let rec freeVars (node: Node<'E,'T>): Set<string> =
         // Union of the free names of the lhs and the rhs of the assignment
         Set.union (freeVars target) (freeVars expr)
     | While(cond, body) -> Set.union (freeVars cond) (freeVars body)
+    | For(name, init, cond, step, body) ->
+        // The loop variable is bound in cond/step/body, but not in init.
+        let scopedFVs = Set.union (freeVars cond) (Set.union (freeVars step) (freeVars body))
+        Set.union (freeVars init) (Set.remove name scopedFVs)
     | Assertion(arg) -> freeVars arg
     | Type(_, _, scope) -> freeVars scope
     | Lambda(args, body) ->
@@ -228,6 +241,11 @@ let rec capturedVars (node: Node<'E,'T>): Set<string> =
         // Union of the captured vars of the lhs and the rhs of the assignment
         Set.union (capturedVars target) (capturedVars expr)
     | While(cond, body) -> Set.union (capturedVars cond) (capturedVars body)
+    | For(name, init, cond, step, body) ->
+        // The loop variable is bound in cond/step/body, but not in init.
+        let scopedCVs =
+            Set.union (capturedVars cond) (Set.union (capturedVars step) (capturedVars body))
+        Set.union (capturedVars init) (Set.remove name scopedCVs)
     | Assertion(arg) -> capturedVars arg
     | Type(_, _, scope) -> capturedVars scope
     | Application(expr, args) ->

@@ -635,6 +635,16 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 (RV.LABEL(whileEndLabel), "")
             ])
 
+    | For(name, init, cond, step, body) ->
+        let loopContent = { node with Expr = Seq([body; step]) ; Type = step.Type}
+        let nextLoop = { node with Expr = While(cond, loopContent); Type = TUnit }
+        let loopExit = { node with Expr = UnitVal; Type = TUnit }
+        let condition = {node with Expr = If(cond, nextLoop,loopExit)}
+        let initVar = {node with Expr = LetMut(name, init, condition); Type = TUnit}
+
+        doCodegen env initVar
+
+
     | Lambda(args, body) ->
         /// Label to mark the position of the lambda term body
         let funLabel = Util.genSymbol "lambda"

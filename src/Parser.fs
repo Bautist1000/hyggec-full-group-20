@@ -550,6 +550,18 @@ let pSimpleExpr' = choice [
     pToken WHILE ->>- pSimpleExpr ->>- (pToken DO >>- pSimpleExpr)
         |>> fun ((tok, cond), body) ->
             mkNode (AST.Expr.While (cond, body)) tok.Begin tok.Begin body.Pos.End
+    
+    pToken FOR ->>-
+        (pToken LPAREN >>-                              // (
+        pToken LET >>- pToken MUTABLE >>- pIdent ->>-   // let mutable x
+        (pToken EQ >>- pSimpleExpr) ->>-                // =
+        (pToken SEMI >>- pSimpleExpr) ->>-              // ; ec
+        (pToken SEMI >>- pSimpleExpr) ->>-              // ; eu
+        (pToken RPAREN >>- pSimpleExpr))                //) eb
+            |>> fun(tokFor,(((((_,name),ei),ec),eu),eb)) ->
+                mkNode (AST.Expr.For (name, ei, ec, eu, eb))
+                       tokFor.Begin tokFor.Begin eb.Pos.End
+
     // Lambda expression: fun (args) -> body
     pToken FUN ->>-
         pParenIdentTypesCommaSeq ->>- (pToken RARROW >>- pSimpleExpr)
@@ -560,6 +572,7 @@ let pSimpleExpr' = choice [
         (pToken WITH >>- pToken LCURLY >>- pMatchCases) ->>- pToken RCURLY
             |>> fun (((tok, expr), cases), tok2) ->
                 mkNode (AST.Expr.Match (expr, cases)) tok.Begin tok.Begin tok2.End
+
 ]
 
 

@@ -100,6 +100,8 @@ type Token =
     | MATCH
     /// Keyword 'with'.
     | WITH
+    /// Keyword 'rec'.
+    | REC
     /// Dot, used for field selection.
     | DOT
     /// Integer literal.
@@ -232,6 +234,7 @@ and internal mkKeywordOrIdent (s: string) =
     | "with" -> WITH
     | "true" -> LIT_BOOL true
     | "false" -> LIT_BOOL false
+    | "rec" -> REC
     | other -> IDENT other
 
 /// Convert a string into a FloatLit token, after stripping the final 'f'.

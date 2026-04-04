@@ -401,6 +401,13 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
         | None when (isValue init) ->
             Some(env, {node with Expr = (ASTUtil.subst scope name init).Expr})
         | None -> None
+    | LetRec(name, tpe, init, scope) ->
+        match (reduce env init) with
+        | Some(env', init') ->
+            Some(env', {node with Expr = (ASTUtil.subst scope name init').Expr})
+        | None when (isValue init) ->
+            Some(env, {node with Expr = (ASTUtil.subst scope name init).Expr})
+        | None -> None
 
     | LetMut(_, _, scope) when (isValue scope) ->
         Some(env, {node with Expr = scope.Expr})

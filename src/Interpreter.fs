@@ -479,11 +479,19 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
 
     | For(name,init,cond,step,body) ->
         /// Rewritten 'for' loop 
+        /// let mutable x = 0;
+        /// if(cond) { body; step; for(x=x; cond; step) {} } else{}
+       
+        let varNode = {node with Expr = Var(name)}
+    
+        let nextFor = {node with Expr = For(name, varNode, cond, step, body)}
+        let ifTrue = {body with Expr = Seq([body; step; nextFor])}
+        let ifFalse = {body with Expr = UnitVal}
+
+        let ifNode = {node with Expr = If(cond, ifTrue, ifFalse)}
+        let rewritten = LetMut(name, init, ifNode)
+        Some(env, {node with Expr = rewritten})
         
-        let loopBody = {body with Expr = Seq([body; step])}
-        let nextloop = {body with Expr = While(cond, loopBody)}
-        let rewritten = LetMut(name, init, nextloop)
-        Some(env, {node with Expr = rewritten})  
 
     | Application(expr, args) ->
         match expr.Expr with

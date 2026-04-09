@@ -93,9 +93,10 @@ let rec subst (node: Node<'E,'T>) (var: string) (sub: Node<'E,'T>): Node<'E,'T> 
         let substBody = subst body var sub
         {node with Expr = While(substCond, substBody)}
 
-    | For(name, init, cond, step, body) when name = var ->
+    | For(name, init, cond, step, body) when name = var -> // let mutable x = 1; for(x = x + 1; e2; e3)
         {node with Expr = For(name, (subst init var sub), cond, step, body)}
-    | For(name, init, cond, step, body) ->
+
+    | For(name, init, cond, step, body) -> // for(let mutable x=1; e2; e3)
         let substInit = subst init var sub
         let substCond = subst cond var sub
         let substStep = subst step var sub

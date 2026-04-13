@@ -93,6 +93,11 @@ let rec subst (node: Node<'E,'T>) (var: string) (sub: Node<'E,'T>): Node<'E,'T> 
         let substBody = subst body var sub
         {node with Expr = While(substCond, substBody)}
 
+    | DoWhile(body, cond) ->
+        let substCond = subst cond var sub
+        let substBody = subst body var sub
+        {node with Expr = DoWhile(substBody, substCond)}
+
     | For(name, init, cond, step, body) when name = var ->
         {node with Expr = For(name, (subst init var sub), cond, step, body)}
     | For(name, init, cond, step, body) ->
@@ -166,6 +171,7 @@ let rec freeVars (node: Node<'E,'T>): Set<string> =
         // Union of the free names of the lhs and the rhs of the assignment
         Set.union (freeVars target) (freeVars expr)
     | While(cond, body) -> Set.union (freeVars cond) (freeVars body)
+    | DoWhile(body, cond) -> Set.union (freeVars body) (freeVars cond)
     | For(name, init, cond, step, body) ->
         // The loop variable is bound in cond/step/body, but not in init.
         let scopedFVs = Set.union (freeVars cond) (Set.union (freeVars step) (freeVars body))
@@ -241,6 +247,7 @@ let rec capturedVars (node: Node<'E,'T>): Set<string> =
         // Union of the captured vars of the lhs and the rhs of the assignment
         Set.union (capturedVars target) (capturedVars expr)
     | While(cond, body) -> Set.union (capturedVars cond) (capturedVars body)
+    | DoWhile(body, cond) -> Set.union (capturedVars body) (capturedVars cond)
     | For(name, init, cond, step, body) ->
         // The loop variable is bound in cond/step/body, but not in init.
         let scopedCVs =

@@ -477,6 +477,16 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
                            {body with Expr = UnitVal})
         Some(env, {node with Expr = rewritten})
 
+    | DoWhile(body, cond) ->
+        /// Rewritten 'do...while' loop:
+        /// first evaluate 'body' and bind its value to a temporary variable;
+        /// then, if 'cond' is true, repeat the whole loop; otherwise return x.
+        let x = "__dowhile_result"
+        let ifNode =
+            { body with Expr = If(cond, node, { body with Expr = Var x }) }
+        let rewritten = Let(x, body, ifNode)
+        Some(env, { node with Expr = rewritten })
+
     | For(name,init,cond,step,body) ->
         /// Rewritten 'for' loop 
         

@@ -636,14 +636,32 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
             ])
 
     | For(name, init, cond, step, body) ->
-        let loopContent = { node with Expr = Seq([body; step]) ; Type = step.Type}
-        let nextLoop = { node with Expr = While(cond, loopContent); Type = TUnit }
-        let loopExit = { node with Expr = UnitVal; Type = TUnit }
-        let condition = {node with Expr = If(cond, nextLoop,loopExit)}
-        let initVar = {node with Expr = LetMut(name, init, condition); Type = TUnit}
+        /// Label to mark the beginning of the 'for' loop
+        let forBeginLabel = Util.genSymbol "for_loop_begin"
+        /// Label to mark the beginning of the 'for' loop body
+        let forBodyBeginLabel = Util.genSymbol "for_body_begin"
+        /// Label to mark the end of the 'for' loop
+        let forEndLabel = Util.genSymbol "for_loop_end"
 
-        doCodegen env initVar
-
+        Asm(RV.LABEL(forBeginLabel))
+            ++ (doCodegen env cond)
+                .AddText([
+                    (RV.BNEZ(Reg.r(env.Target), forBodyBeginLabel),
+                     "Jump to loop body if 'for' condition is true")
+                    (RV.LA(Reg.r(env.Target), forEndLabel),
+                     "Load address of label at the end of the 'for' loop")
+                    (RV.JR(Reg.r(env.Target)), "Jump to the end of the loop")
+                    (RV.LABEL(forBodyBeginLabel),
+                     "Body of the 'for' loop starts here")
+                ])
+            ++ (doCodegen env body)
+            ++ (doCodegen env step)
+            .AddText([
+                (RV.LA(Reg.r(env.Target), forBeginLabel),
+                 "Load address of label at the beginning of the 'for' loop")
+                (RV.JR(Reg.r(env.Target)), "Jump to the end of the loop")
+                (RV.LABEL(forEndLabel), "")
+            ])
 
     | Lambda(args, body) ->
         /// Label to mark the position of the lambda term body

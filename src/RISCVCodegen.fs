@@ -653,20 +653,20 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
         ++ Asm(RV.LABEL(forBeginLabel))
             ++ (doCodegen loopEnv cond)
                 .AddText([
-                    (RV.BNEZ(Reg.r(env.Target), forBodyBeginLabel),
+                    (RV.BNEZ(Reg.r(loopEnv.Target), forBodyBeginLabel),
                     "Jump to loop body if 'for' condition is true")
-                    (RV.LA(Reg.r(env.Target), forEndLabel),
+                    (RV.LA(Reg.r(loopEnv.Target), forEndLabel),
                     "Load address of label at the end of the 'for' loop")
-                    (RV.JR(Reg.r(env.Target)), "Jump to the end of the loop")
+                    (RV.JR(Reg.r(loopEnv.Target)), "Jump to the end of the loop")
                     (RV.LABEL(forBodyBeginLabel),
                     "Body of the 'for' loop starts here")
                 ])
             ++ (doCodegen loopEnv body)
             ++ (doCodegen loopEnv step)
             .AddText([
-                (RV.LA(Reg.r(env.Target), forBeginLabel),
+                (RV.LA(Reg.r(loopEnv.Target), forBeginLabel),
                 "Load address of label at the beginning of the 'for' loop")
-                (RV.JR(Reg.r(env.Target)), "Jump to the end of the loop")
+                (RV.JR(Reg.r(loopEnv.Target)), "Jump to the end of the loop")
                 (RV.LABEL(forEndLabel), "")
             ])
 

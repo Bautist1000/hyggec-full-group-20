@@ -635,6 +635,29 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
                 (RV.LABEL(whileEndLabel), "")
             ])
 
+    | DoWhile(body, cond) ->
+        /// Label to mark the beginning of the 'do...while' loop body
+        let doWhileBodyBeginLabel = Util.genSymbol "dowhile_body_begin"
+        /// Label to mark the beginning of the condition check
+        let doWhileCondBeginLabel = Util.genSymbol "dowhile_cond_begin"
+        /// Label to mark the end of the 'do...while' loop
+        let doWhileEndLabel = Util.genSymbol "dowhile_loop_end"
+        Asm(RV.LABEL(doWhileBodyBeginLabel))
+            ++ (doCodegen env body)
+            .AddText([
+                (RV.LA(Reg.r(env.Target), doWhileCondBeginLabel),
+                "Load address of label at the condition check of the 'do...while' loop")
+                (RV.JR(Reg.r(env.Target)), "Jump to the condition check")
+                (RV.LABEL(doWhileCondBeginLabel),
+                "Condition of the 'do...while' loop starts here")
+            ])
+            ++ (doCodegen env cond)
+            .AddText([
+                (RV.BNEZ(Reg.r(env.Target), doWhileBodyBeginLabel),
+                "Jump to loop body if 'do...while' condition is true")
+                (RV.LABEL(doWhileEndLabel), "")
+            ])
+        
     | For(name, init, cond, step, body) ->
         let initCode = doCodegen env init
         

@@ -212,7 +212,12 @@ and Expr<'E,'T> =
     | While of cond: Node<'E,'T>
              * body: Node<'E,'T>
 
-    // 'For' loop with a Scoed Variable: as long as 'cond' is true, repeat the 'body'.
+    /// 'Do-While' loop: execute 'body' once, then as long as 'cond' is true,
+    /// repeat the 'body'. Returns the value of the last execution of 'body'.
+    | DoWhile of body: Node<'E,'T>
+             * cond: Node<'E,'T>
+
+    // 'For' loop with a Scoped Variable: as long as 'cond' is true, repeat the 'body'.
     | For of name: string       // let mutable x
             * init: Node<'E,'T> // var or expression
             * cond: Node<'E,'T> // boolean condition

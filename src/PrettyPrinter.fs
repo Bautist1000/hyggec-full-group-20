@@ -155,7 +155,9 @@ let rec internal formatASTRec (node: AST.Node<'E,'T>): Tree =
     | While(cond, body) ->
         mkTree $"While" node [("cond", formatASTRec cond)
                               ("body", formatASTRec body)]
-    
+    | DoWhile(body, cond) ->
+        mkTree $"DoWhile" node [("body", formatASTRec body);
+                                 ("cond", formatASTRec cond)]
     | For(name,init, cond, step, body) ->
         mkTree $"For" node [("init", formatASTRec init)
                             ("cond", formatASTRec cond)

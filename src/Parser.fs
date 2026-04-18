@@ -550,6 +550,10 @@ let pSimpleExpr' = choice [
     pToken WHILE ->>- pSimpleExpr ->>- (pToken DO >>- pSimpleExpr)
         |>> fun ((tok, cond), body) ->
             mkNode (AST.Expr.While (cond, body)) tok.Begin tok.Begin body.Pos.End
+
+    pToken DO ->>- pSimpleExpr ->>- (pToken WHILE >>- pSimpleExpr)
+        |>> fun ((tok, body), cond) ->
+            mkNode (AST.Expr.DoWhile (body, cond)) tok.Begin tok.Begin cond.Pos.End
     
     pToken FOR ->>-
         (pToken LPAREN >>-                              // (

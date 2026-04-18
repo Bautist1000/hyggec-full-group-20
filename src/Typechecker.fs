@@ -490,6 +490,17 @@ let rec internal typer (env: TypingEnv) (node: UntypedAST): TypingResult =
         | Error(es), Ok(_) -> Error(es)
         | Error(esCond), Error(esBody) -> Error(esCond @ esBody)
 
+    | DoWhile(body, cond) ->
+        match ((typer env body), (typer env cond)) with
+        | (Ok(tbody), Ok(tcond)) when (isSubtypeOf env tcond.Type TBool) ->
+            Ok { Pos = node.Pos; Env = env; Type = tbody.Type; Expr = DoWhile(tbody, tcond)}
+        | (Ok(_), Ok(tcond)) ->
+            Error([(tcond.Pos, $"'do...while' condition: expected type %O{TBool}, "
+                                + $"found %O{tcond.Type}")])
+        | Ok(_), Error(es) -> Error(es)
+        | Error(es), Ok(_) -> Error(es)
+        | Error(esBody), Error(esCond) -> Error(esBody @ esCond)
+
     | For(name, init, cond, step, body) ->
         let rInit = typer env init
         let forEnv =

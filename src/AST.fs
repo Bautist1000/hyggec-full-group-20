@@ -219,7 +219,7 @@ and Expr<'E,'T> =
 
     // 'For' loop with a Scoped Variable: as long as 'cond' is true, repeat the 'body'.
     | For of name: string       // let mutable x
-            * init: Node<'E,'T> // any value
+            * init: Node<'E,'T> // var or expression
             * cond: Node<'E,'T> // boolean condition
             * step: Node<'E,'T> // step expresion
             * body: Node<'E,'T> // body expression

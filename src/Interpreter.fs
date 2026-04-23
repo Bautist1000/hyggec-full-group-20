@@ -404,9 +404,9 @@ let rec internal reduce (env: RuntimeEnv<'E,'T>)
     | LetRec(name, tpe, init, scope) ->
         match (reduce env init) with
         | Some(env', init') ->
-            Some(env', {node with Expr = (ASTUtil.subst scope name init').Expr})
+            Some(env', {node with Expr = LetRec(name, tpe, init', scope)})
         | None when (isValue init) ->
-            Some(env, {node with Expr = (ASTUtil.subst scope name init).Expr})
+            Some(env, {node with Expr = LetRec(name, tpe, init, (ASTUtil.subst scope name init))})
         | None -> None
 
     | LetMut(_, _, scope) when (isValue scope) ->

@@ -468,7 +468,7 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
             $"Assertion failure at "
             + $"{node.Pos.Begin.Line}:{node.Pos.Begin.Column}"
             + $"-{node.Pos.End.Line}:{node.Pos.End.Column}\\n"
-            + $"{freeVarsMsg}"
+            + $"{freeVarsMsg}\\n"
 
         // Check the assertion, and jump to 'passLabel' if it is true
         // otherwise, print a diagnostic message and terminate.

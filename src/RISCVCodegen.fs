@@ -10,6 +10,7 @@ open AST
 open RISCV
 open Type
 open Typechecker
+open ASTUtil
 
 
 /// Exit code used in the generated assembly to signal an assertion violation.
@@ -449,11 +450,25 @@ let rec internal doCodegen (env: CodegenEnv) (node: TypedAST): Asm =
         let passLabel = Util.genSymbol "assert_true"
         /// Label for the assertion failure message in the data section
         let failMsgLabel = Util.genSymbol "assert_fail_msg"
+
+        /// Calculates the names of the free variables in assertion expression, transforming them in a list and ordering them
+        let freeVarNames = 
+            freeVars arg
+            |> Set.toList
+            |> List.sort
+
+        /// Transform the list of free variables into a readable string, or "none"
+        let freeVarsMsg = 
+            match freeVarNames with
+            | [] -> "free vars: none"
+            | vars -> "free vars: " + (String.concat ", " vars)
+
         /// Compile time assertion failure message including source position
         let failMsg =
             $"Assertion failure at "
             + $"{node.Pos.Begin.Line}:{node.Pos.Begin.Column}"
             + $"-{node.Pos.End.Line}:{node.Pos.End.Column}\\n"
+            + $"{freeVarsMsg}"
 
         // Check the assertion, and jump to 'passLabel' if it is true
         // otherwise, print a diagnostic message and terminate.
